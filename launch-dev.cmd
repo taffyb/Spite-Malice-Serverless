@@ -1,0 +1,1 @@
+ D:\nodejs\node C:\Users\Taffy\AppData\Roaming\npm\node_modules\nodemon\bin\nodemon.js src/app.js
