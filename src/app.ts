@@ -13,6 +13,14 @@ app.use(logger('dev'));
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json({limit: '50mb', type: 'application/json'}));
 
+// allow cross origin
+app.use(function(req, res, next) {
+    res.header('Access-Control-Allow-Origin', '*'); // update to match the domain you will make the request from
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    res.header('Access-Control-Allow-Methods', 'PUT, POST, GET, DELETE, OPTIONS');
+    next();
+  });
+
 // define a route handler for the default home page
 app.get( '/', ( req: any, res: any ) => {
     res.send( 'Hello world!.' );

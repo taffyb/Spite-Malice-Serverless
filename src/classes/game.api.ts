@@ -1,7 +1,8 @@
 import {DynamoDbUtils} from './dynamodb.utils';
-import {IGameModel, GameFactory, Dealer} from 's-n-m-lib';
+import {Attribute, AttributeTypesEnum} from './dynamodb.types';
+import {IGameModel, GameFactory, Game, Dealer, GameStatesEnum} from 's-n-m-lib';
 
-import { DynamoDB, DynamoDBClient, DynamoDBConfiguration, PutItemInput } from '@aws-sdk/client-dynamodb-v2-node';
+import { DynamoDB, DynamoDBClient, DynamoDBConfiguration, PutItemInput, ScanInput } from '@aws-sdk/client-dynamodb-v2-node';
 
 const config: DynamoDBConfiguration = {endpoint: 'http://localhost:8000'};
 const dynamoDb = new DynamoDB(config);
@@ -28,12 +29,12 @@ export class GameAPI {
                 'player2Uuid': { S: `${newGame.player2Uuid}` },
                 'activePlayer': { N: `${newGame.activePlayer}` },
                 'state': { N: `${newGame.state}` },
-                'cards': { S: `${JSON.stringify(newGame.cards)}` }
+                'cards': { S: `${JSON.stringify(newGame.cards)}` },
+                'createDateTime': { S: `${newGame.createDateTime}` },
+                'updateDateTime': { S: `${newGame.createDateTime}` }
                   }
             };
 
-//            console.log(`Item: ${JSON.stringify(item.Item)}`);
-//            console.log(`Check if table exists`);
             const exists = DynamoDbUtils.tableExists('games');
             exists
                 .then((d) => {
@@ -42,69 +43,135 @@ export class GameAPI {
                             console.error('Unable to put Item . Error JSON:', JSON.stringify(err, null, 2));
                             reject(err);
                         } else {
-                            console.log('Put Item . Item description JSON:', JSON.stringify(data, null, 2));
                             resolve(newGame);
                         }
                      });
                 })
                 .catch(async (e) => {
-                    await DynamoDbUtils.createTable('games', {name: 'uuid', type: 'S'});
-//                    console.log(`Put and Item in the Table`);
+                    const gameKeys: Attribute[] = [{name: 'uuid', type: AttributeTypesEnum.STRING}];
+                    await DynamoDbUtils.createTable('games', gameKeys);
                     dynamoDb.putItem(item, function(err: any, data: any) {
                       if (err) {
-//                          console.error('Unable to put Item . Error JSON:', JSON.stringify(err, null, 2));
                           reject(err);
                       } else {
-//                          console.log('Put Item . Item description JSON:', JSON.stringify(data, null, 2));
                           resolve(newGame);
                       }
                    });
                 });
+
            // For each Game create a separate table to hold all its moves
            // tableName = gameUuid
            // key by moveId
-            DynamoDbUtils.createTable(`${newGame.uuid}`, {name: 'id', type: 'N'});
+            const moveKeys: Attribute[] = [{name: 'id', type: AttributeTypesEnum.NUMERIC}];
+            DynamoDbUtils.createTable(`${newGame.uuid}`, moveKeys);
         });
+    }
+    static updateGame(game: IGameModel, nameChange: boolean, stateChange: boolean, activePlayerChange: boolean): Promise<boolean> {
+        const expValues: any = {};
+        const expNames: any = {};
+        let updateExp = 'SET #c= :c, #udt=:udt';
+        expValues[':c'] = {'S': `${JSON.stringify(game.cards)}`};
+        expValues[':udt'] = {'S': `${game.updateDateTime}`};
+        expNames['#c'] = 'cards';
+        expNames['#udt'] = 'updateDateTime';
+        if (nameChange) {
+            expValues[':n'] = {'S': `${game.name}`};
+            expNames['#n'] = 'name';
+            updateExp += ', #n= :n';
+        }
+        if (stateChange) {
+            expValues[':s'] = {'N': `${game.state}`};
+            expNames['#s'] = 'state';
+            updateExp += ', #s= :s';
+        }
+        if (activePlayerChange) {
+            updateExp += `, #a=:a`;
+            expValues[':a'] = {'N': `${game.activePlayer}`};
+            expNames['#a'] = 'activePlayer';
+        }
+        const item = {
+            TableName: 'games',
+            Key: {uuid: {'S': `${game.uuid}`}},
+            UpdateExpression: updateExp,
+            ExpressionAttributeValues: expValues,
+            ExpressionAttributeNames: expNames
+        };
+        return new Promise<boolean>((resolve, reject) => {
+          dynamoDb.updateItem(item)
+              .then((data) => {
+                  resolve(true);
+              })
+              .catch((err) => {
+                  console.error('Unable to update Item . Error JSON:', JSON.stringify(err, null, 2));
+                  reject(err);
+              });
+      });
     }
     static getGames(playerUuid?: string): Promise<IGameModel[]> {
         return new Promise<IGameModel[]>((resolve, reject) => {
-            let params;
+            let params: ScanInput;
             params = {
                     TableName: 'games',
-                    AttributesToGet: [
-                      'uuid',
-                      'name',
-                      'player1Uuid',
-                      'player2Uuid'
-                    ]
+                    ProjectionExpression: '#id,#n,player1Uuid,player2Uuid,#s,createDateTime',
+                    ExpressionAttributeNames: {'#n': 'name', '#id': 'uuid', '#s': 'state'}
                   };
             if (playerUuid) {
-                params = {
-                    TableName: 'games',
-                    ProjectionExpression: '#id,#n,player1Uuid,player2Uuid,#s',
-                    FilterExpression: 'player1Uuid=:playerUuid or player2Uuid=:playerUuid',
-                    ExpressionAttributeNames: {'#n': 'name', '#id': 'uuid', '#s': 'state'},
-                    ExpressionAttributeValues: {':playerUuid': { S: `${playerUuid}`}}
-                };
-            } // end if
-            dynamoDb.scan(params, function(err: any, data: any) {
-                if (err) {
-//                    console.error('Error JSON:', JSON.stringify(err, null, 2));
-                    reject(err);
-                } else {
-//                    console.log('Query Game. Item description JSON:', JSON.stringify(data, null, 2));
-                    const games: IGameModel[] = [];
-                    data.Items.forEach((item: any) => {
-                        const game: IGameModel = {uuid: item.uuid.S,
-                                          name: item.name.S,
-                                          player1Uuid: item.player1Uuid.S,
-                                          player2Uuid: item.player2Uuid.S};
-                        games.push(game);
-                    });
-                    resolve(games);
-                }
-             });
+                params.FilterExpression = 'player1Uuid=:playerUuid or player2Uuid=:playerUuid',
+                params.ExpressionAttributeValues = {':playerUuid': { S: `${playerUuid}`}};
+            }
+
+
+            const exists = DynamoDbUtils.tableExists('games');
+            exists
+                .then((d) => {this.scanGames(params, resolve, reject); })
+                .catch(async (err) => {
+                    const gameKeys: Attribute[] = [{name: 'uuid', type: AttributeTypesEnum.STRING}];
+                    await DynamoDbUtils.createTable('games', gameKeys);
+                    resolve([]);
+                });
+
         });
+    }
+    private static scanGames(params: ScanInput, resolve: any, reject: any) {
+        dynamoDb.scan(params, function(err: any, data: any) {
+            if (err) {
+              console.error(`Scan Error ${JSON.stringify(err)}`);
+                reject(err);
+            } else {
+                const games: IGameModel[] = [];
+                data.Items.forEach((item: any) => {
+                    console.log(`item:${JSON.stringify(item)}`);
+                    try {
+                        const game: IGameModel = {
+                                uuid: item.uuid.S,
+                                name: item.name.S,
+                                player1Uuid: item.player1Uuid.S,
+                                player2Uuid: item.player2Uuid.S,
+                                state: item.state.N,
+                                createDateTime: item.createDateTime.S
+                        };
+                        games.push(game);
+
+                    } catch (err) {
+                        if (err.name === 'ResourceNotFoundException') {
+                            const gameKeys: Attribute[] = [{name: 'uuid', type: AttributeTypesEnum.STRING}];
+                            DynamoDbUtils.createTable('games', gameKeys)
+                                .then(() => {
+                                    resolve([]);
+                                })
+                                .catch((e) => {
+                                    console.error(`Error ${e}`);
+                                    reject(e);
+                                });
+                        } else {
+                            console.error(`Error ${err}`);
+                            reject(err);
+                        }
+                    }
+                });
+                resolve(games);
+            }
+         });
     }
     static getGame(gameUuid: string): Promise<IGameModel> {
         return new Promise<IGameModel>((resolve, reject) => {
@@ -116,10 +183,10 @@ export class GameAPI {
             };
             dynamoDb.getItem(item, function(err: any, data: any) {
                 if (err) {
-//                    console.error('Unable to get Item . Error JSON:', JSON.stringify(err, null, 2));
+                    console.error('Unable to get Item . Error JSON:', JSON.stringify(err, null, 2));
                     reject(err);
                 } else {
-//                    console.log('Put Item . Item description JSON:', JSON.stringify(data, null, 2));
+                    console.log(`Item: ${JSON.stringify(data.Item)}`);
                     const cards = JSON.parse(data.Item.cards.S);
                     const game: IGameModel = {
                                                 uuid: gameUuid,
@@ -128,6 +195,8 @@ export class GameAPI {
                                                 player2Uuid: data.Item.player2Uuid.S,
                                                 activePlayer: data.Item.activePlayer.N,
                                                 state: data.Item.state.N,
+                                                createDateTime: data.Item.createDateTime.S, /*
+                                                updateDateTime: (data.Item.updateDateTime ? data.Item.updateDateTime.S : null),*/
                                                 cards: cards
                                             };
                     resolve(game);

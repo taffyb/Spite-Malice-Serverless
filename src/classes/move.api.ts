@@ -26,7 +26,7 @@ export class MoveAPI {
 //            console.log(`Item to add:${JSON.stringify(item)}`);
             dynamoDb.putItem(item, function(err: any, data: any) {
                 if (err) {
-//                    console.error('Unable to put Item . Error JSON:', JSON.stringify(err, null, 2));
+                    console.error('Unable to put Item . Error JSON:', JSON.stringify(err, null, 2));
                     resolve(false);
                 } else {
 //                    console.log('Put Item . Item description JSON:', JSON.stringify(data, null, 2));

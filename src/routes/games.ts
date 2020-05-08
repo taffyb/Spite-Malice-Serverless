@@ -20,10 +20,19 @@ export const register = ( app: express.Application, prefix: string= '/api' ) => 
             .catch((err) => {res.send(err); });
     });
     app.get( prefix + '/games', ( req: any, res ) => {
+        const limit = Number.parseInt(req.query.limit, 10);
         const playerUuid = req.query.playerUuid;
         const games: Promise<IGameModel[]> = GameAPI.getGames(playerUuid);
         games
-        .then((data: IGameModel[]) => {res.send(data); })
+        .then((data: IGameModel[]) => {
+            data = data.sort((a, b) => {
+                return Number.parseInt(b.createDateTime, 10) - Number.parseInt(a.createDateTime, 10);
+            });
+            if (limit) {
+                data = data.splice(0, limit);
+            }
+            res.send(data);
+        })
         .catch((err) => {res.status(500).send(err); });
     });
     app.post( prefix + '/games', ( req: any, res ) => {
@@ -33,7 +42,17 @@ export const register = ( app: express.Application, prefix: string= '/api' ) => 
             .then((game: IGameModel) => {res.send(game); })
             .catch((err) => {res.send(err); });
     });
-    app.put( prefix + '/games/:uuid', ( req: any, res ) => {});
+    app.put( prefix + '/games/:uuid', ( req: any, res ) => {
+        const nameChange: boolean = req.query.name || false;
+        const activePlayerChange: boolean = req.query.activePlayer || false;
+        const stateChange: boolean = req.query.state || false;
+        const uuid: string = req.params.uuid;
+        const game: IGameModel = req.body;
+        const out: Promise<boolean> = GameAPI.updateGame(game, nameChange, stateChange, activePlayerChange);
+        out
+            .then((success) => {res.send(success).status(200); })
+            .catch((err) => {res.send(err); });
+    });
 
 
     app.get( prefix + '/games/:uuid/moves', ( req: any, res ) => {
