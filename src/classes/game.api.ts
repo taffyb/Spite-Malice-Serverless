@@ -186,7 +186,7 @@ export class GameAPI {
                     console.error('Unable to get Item . Error JSON:', JSON.stringify(err, null, 2));
                     reject(err);
                 } else {
-                    console.log(`Item: ${JSON.stringify(data.Item)}`);
+//                    console.log(`Item: ${JSON.stringify(data.Item)}`);
                     const cards = JSON.parse(data.Item.cards.S);
                     const game: IGameModel = {
                                                 uuid: gameUuid,
@@ -195,8 +195,8 @@ export class GameAPI {
                                                 player2Uuid: data.Item.player2Uuid.S,
                                                 activePlayer: data.Item.activePlayer.N,
                                                 state: data.Item.state.N,
-                                                createDateTime: data.Item.createDateTime.S, /*
-                                                updateDateTime: (data.Item.updateDateTime ? data.Item.updateDateTime.S : null),*/
+                                                createDateTime: data.Item.createDateTime.S,
+                                                updateDateTime: (data.Item.updateDateTime ? data.Item.updateDateTime.S : data.Item.createDateTime.S),
                                                 cards: cards
                                             };
                     resolve(game);

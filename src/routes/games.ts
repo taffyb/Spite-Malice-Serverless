@@ -36,6 +36,7 @@ export const register = ( app: express.Application, prefix: string= '/api' ) => 
         .catch((err) => {res.status(500).send(err); });
     });
     app.post( prefix + '/games', ( req: any, res ) => {
+//        console.log(`POST /games`);
         const inGame: IGameModel = req.body;
         const outGame: Promise<IGameModel> = GameAPI.new(inGame);
         outGame
@@ -71,6 +72,7 @@ export const register = ( app: express.Application, prefix: string= '/api' ) => 
             .catch((err) => {res.send(err); });
     });
     app.post( prefix + '/games/:uuid/moves', ( req: any, res ) => {
+//        console.log(`POST /games/:uuid/moves`);
         const move: IMoveModel = req.body;
         const result: Promise<boolean> = MoveAPI.addMove(move);
         result

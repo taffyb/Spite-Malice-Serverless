@@ -10,11 +10,10 @@ export class MoveAPI {
     static addMove(move: IMoveModel): Promise<boolean> {
         return new Promise<boolean>((resolve, reject) => {
 
-            const item = {
+            const item: any = {
               TableName: `${move.gameUuid}`,
               Item: {
                 'id':           { N: `${move.id}` },
-                'playerUuid':   { S: `${move.playerUuid}` },
                 'from':         { N: `${move.from}` },
                 'card':         { N: `${move.card}` },
                 'to':           { N: `${move.to}` },
@@ -23,7 +22,10 @@ export class MoveAPI {
                 'type':         { N: `${move.type}` }
                   }
             };
-//            console.log(`Item to add:${JSON.stringify(item)}`);
+            if (move.playerUuid) {
+                item.Item['playerUuid'] = { S: `${move.playerUuid}` };
+            }
+            console.log(`Item to add:${JSON.stringify(item)}`);
             dynamoDb.putItem(item, function(err: any, data: any) {
                 if (err) {
                     console.error('Unable to put Item . Error JSON:', JSON.stringify(err, null, 2));
@@ -60,7 +62,7 @@ export class MoveAPI {
                     ExpressionAttributeValues: {':id': { N: `${id}`}}
                 };
             } // end if
-//            console.log(`Item:${JSON.stringify(params)}`);
+            console.log(`Item:${JSON.stringify(params)}`);
             dynamoDb.scan(params, function(err: any, data: any) {
                 if (err) {
 //                    console.error('Error JSON:', JSON.stringify(err, null, 2));
@@ -71,7 +73,7 @@ export class MoveAPI {
                     data.Items.forEach((item: any) => {
                         const m: IMoveModel = {id: item.id.N,
                                           gameUuid: `${gameUuid}`,
-                                          playerUuid: item.playerUuid.S,
+                                          playerUuid: (item.playerUuid ? item.playerUuid.S : null),
                                           from: item.from.N,
                                           card: item.card.N,
                                           to: item.to.N,
