@@ -2,7 +2,8 @@ import {DynamoDbUtils} from './dynamodb.utils';
 import {Attribute, AttributeTypesEnum} from './dynamodb.types';
 import {IGameModel, GameFactory, Game, Dealer, GameStatesEnum} from 's-n-m-lib';
 
-import { DynamoDB, DynamoDBClient, DynamoDBConfiguration, PutItemInput, ScanInput } from '@aws-sdk/client-dynamodb-v2-node';
+import { DynamoDB, DynamoDBClient, DynamoDBConfiguration } from '@aws-sdk/client-dynamodb-v2-node';
+import {PutItemInput, ScanInput} from '@aws-sdk/client-dynamodb-v2-node';
 
 const config: DynamoDBConfiguration = {endpoint: 'http://localhost:8000'};
 const dynamoDb = new DynamoDB(config);
@@ -188,6 +189,7 @@ export class GameAPI {
                 } else {
 //                    console.log(`Item: ${JSON.stringify(data.Item)}`);
                     const cards = JSON.parse(data.Item.cards.S);
+                    const updateDateTime = (data.Item.updateDateTime ? data.Item.updateDateTime.S : data.Item.createDateTime.S);
                     const game: IGameModel = {
                                                 uuid: gameUuid,
                                                 name: data.Item.name.S,
@@ -196,7 +198,7 @@ export class GameAPI {
                                                 activePlayer: data.Item.activePlayer.N,
                                                 state: data.Item.state.N,
                                                 createDateTime: data.Item.createDateTime.S,
-                                                updateDateTime: (data.Item.updateDateTime ? data.Item.updateDateTime.S : data.Item.createDateTime.S),
+                                                updateDateTime: updateDateTime,
                                                 cards: cards
                                             };
                     resolve(game);

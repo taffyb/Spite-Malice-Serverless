@@ -25,7 +25,7 @@ export class MoveAPI {
             if (move.playerUuid) {
                 item.Item['playerUuid'] = { S: `${move.playerUuid}` };
             }
-            console.log(`Item to add:${JSON.stringify(item)}`);
+//            console.log(`Item to add:${JSON.stringify(item)}`);
             dynamoDb.putItem(item, function(err: any, data: any) {
                 if (err) {
                     console.error('Unable to put Item . Error JSON:', JSON.stringify(err, null, 2));
@@ -62,7 +62,7 @@ export class MoveAPI {
                     ExpressionAttributeValues: {':id': { N: `${id}`}}
                 };
             } // end if
-            console.log(`Item:${JSON.stringify(params)}`);
+//            console.log(`Item:${JSON.stringify(params)}`);
             dynamoDb.scan(params, function(err: any, data: any) {
                 if (err) {
 //                    console.error('Error JSON:', JSON.stringify(err, null, 2));
