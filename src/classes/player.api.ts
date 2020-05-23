@@ -1,6 +1,7 @@
 import {DynamoDbUtils} from './dynamodb.utils';
 import {Attribute, AttributeTypesEnum} from './dynamodb.types';
-import {IPlayerModel, DEFAULT_PROFILE} from 's-n-m-lib';
+import {IPlayerModel, DEFAULT_PROFILE, Opponent} from 's-n-m-lib';
+import {ActivePlayerStore} from './ws.listener';
 
 import { DynamoDB, DynamoDBClient, DynamoDBConfiguration } from '@aws-sdk/client-dynamodb-v2-node';
 import {PutItemInput, ScanInput} from '@aws-sdk/client-dynamodb-v2-node';
@@ -50,19 +51,24 @@ export class PlayerAPI {
         });
     }
 
-    static getOpponents(playerUuid: string): Promise<IPlayerModel[]> {
-        const opponents: any = {'123456': [{uuid: '987654', name: 'Suzannah'}, {uuid: '111111', name: 'Player1'},
-                                    {uuid: '222222', name: 'Player2'}],
-                            '987654': [{uuid: '123456', name: 'Taffy'}, {uuid: '111111', name: 'Player1'}]
+    static getOpponents(playerUuid: string): Promise<Opponent[]> {
+        const opponents: any = {'123456': [{uuid: '987654', name: 'Suzannah'},
+                                           {uuid: '111111', name: 'Player1'},
+                                           {uuid: '222222', name: 'Player2'}],
+                            '987654': [{uuid: '123456', name: 'Taffy'},
+                                       {uuid: '111111', name: 'Player1'}]
         };
 
 
-        return new Promise<IPlayerModel[]>((resolve, reject) => {
-            const myOpponents: IPlayerModel[] = [];
+        return new Promise<Opponent[]>((resolve, reject) => {
+            const myOpponents: Opponent[] = [];
             if (opponents[playerUuid]) {
                 myOpponents.push(... opponents[playerUuid]);
+                myOpponents.forEach((opp: Opponent) => {
+                    opp.online = ActivePlayerStore.isActivePlayer(opp);
+                });
             }
-            myOpponents.push({uuid: '007', name: 'Robo'});
+            myOpponents.push({uuid: '007', name: 'Robo', online: true});
             resolve(myOpponents);
         });
     }
