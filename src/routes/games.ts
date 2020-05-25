@@ -38,7 +38,7 @@ export const register = ( app: express.Application, prefix: string= '/api' ) => 
     app.post( prefix + '/games', ( req: any, res ) => {
 //        console.log(`POST /games`);
         const inGame: IGameModel = req.body;
-        const outGame: Promise<IGameModel> = GameAPI.new(inGame);
+        const outGame: Promise<IGameModel> = GameAPI.addGame(inGame);
         outGame
             .then((game: IGameModel) => {res.send(game); })
             .catch((err) => {res.send(err); });

@@ -62,7 +62,7 @@ export class WsListener {
                 player.uuid = k;
                 if (ActivePlayerStore.isActivePlayer(player) && ActivePlayerStore.getActivePlayerSocket(player).id === socket.id) {
                     const opponents: IPlayerModel[] = ActivePlayerStore.getActivePlayerOpponents(player);
-                    console.log(`${player.name} has opponents: ${JSON.stringify(opponents)}`);
+                    console.log(`${player.uuid} has opponents: ${JSON.stringify(opponents)}`);
                     opponents.forEach((opp) => {
                         if (ActivePlayerStore.isActivePlayer(opp)) {
                             const opponentSocket = ActivePlayerStore.getActivePlayerSocket(opp);

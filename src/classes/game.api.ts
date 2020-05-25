@@ -9,14 +9,14 @@ const config: DynamoDBConfiguration = {endpoint: 'http://localhost:8000'};
 const dynamoDb = new DynamoDB(config);
 
 export class GameAPI {
-    static new(game: IGameModel): Promise<IGameModel> {
+    static addGame(game: IGameModel): Promise<IGameModel> {
         return new Promise<IGameModel>((resolve, reject) => {
             let newGame: IGameModel;
             if (!game) {throw new Error('game required'); }
             if (!game.uuid) {
                 const dealer = new Dealer();
                 const deck: number[] = dealer.getDeck();
-                newGame = GameFactory.newGame(game.name, game.player1Uuid, game.player2Uuid, deck);
+                newGame = GameFactory.newGame(game.name, game.player1Uuid, game.player2Uuid, deck, game.local);
             } else {
                 newGame = game;
             }
@@ -24,6 +24,7 @@ export class GameAPI {
               TableName: 'games',
               Item: {
                 'created': {S: Date.now().toString()},
+                'local': { S: `${newGame.local}` },
                 'uuid': { S: `${newGame.uuid}` },
                 'name': { S: `${newGame.name}` },
                 'player1Uuid': { S: `${newGame.player1Uuid}` },
@@ -113,8 +114,9 @@ export class GameAPI {
             let params: ScanInput;
             params = {
                     TableName: 'games',
-                    ProjectionExpression: '#id,#n,player1Uuid,player2Uuid,#s,createDateTime',
-                    ExpressionAttributeNames: {'#n': 'name', '#id': 'uuid', '#s': 'state'}
+                    ProjectionExpression: '#id,#n,player1Uuid,player2Uuid,#s,createDateTime,#l,#a',
+                    ExpressionAttributeNames: {'#n': 'name', '#id': 'uuid', '#s': 'state', '#l': 'local',
+                                               '#a': 'activePlayer'}
                   };
             if (playerUuid) {
                 params.FilterExpression = 'player1Uuid=:playerUuid or player2Uuid=:playerUuid',
@@ -144,11 +146,13 @@ export class GameAPI {
                     console.log(`item:${JSON.stringify(item)}`);
                     try {
                         const game: IGameModel = {
+                                local: item.local.S,
                                 uuid: item.uuid.S,
                                 name: item.name.S,
                                 player1Uuid: item.player1Uuid.S,
                                 player2Uuid: item.player2Uuid.S,
                                 state: item.state.N,
+                                activePlayer: item.activePlayer.N,
                                 createDateTime: item.createDateTime.S
                         };
                         games.push(game);
@@ -199,7 +203,8 @@ export class GameAPI {
                                                 state: data.Item.state.N,
                                                 createDateTime: data.Item.createDateTime.S,
                                                 updateDateTime: updateDateTime,
-                                                cards: cards
+                                                cards: cards,
+                                                local: (data.Item.local.S === 'true')
                                             };
                     resolve(game);
                 }
