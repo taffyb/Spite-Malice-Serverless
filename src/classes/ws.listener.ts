@@ -1,5 +1,5 @@
 import {PlayerAPI} from './player.api';
-import {IPlayerModel, Player, IInvitationModel} from 's-n-m-lib';
+import {IPlayerModel, IMoveModel, Player, IInvitationMessage, IMoveMessage, IJoinMessage} from 's-n-m-lib';
 import * as Io from 'socket.io';
 import { v4 as uuid } from 'uuid';
 
@@ -44,9 +44,10 @@ export class WsListener {
         io.on('connect', (socket: any) => {
            console.log(`Connect: ${socket.id}`);
            socket.on('message', (data: any) => {this.onMessage(data); });
+           socket.on('send-moves', (moves: IMoveMessage) => {this.onMove(moves); });
            socket.on('login', (p: {player: IPlayerModel, opponents: IPlayerModel[]}) => {this.onLogin(p, socket); });
-           socket.on('invite', (invite: IInvitationModel) => {this.onInvite(invite); });
-           socket.on('invite-response', (invite: IInvitationModel) => {this.onInviteResponse(invite); });
+           socket.on('invite', (invite: IInvitationMessage) => {this.onInvite(invite); });
+           socket.on('invite-response', (invite: IInvitationMessage) => {this.onInviteResponse(invite); });
            socket.on('join', (join: {player2: IPlayerModel, gameUuid: string}) => {this.onJoin(join); });
            socket.on('disconnect', () => {this.onDisconnect(socket); });
         });
@@ -83,7 +84,7 @@ export class WsListener {
             opponentSocket.emit('join', join.gameUuid);
         }
     }
-    onInviteResponse(invite: IInvitationModel) {
+    onInviteResponse(invite: IInvitationMessage) {
         console.log(`onInviteResponse: ${JSON.stringify(invite)}`);
         invite.uuid = uuid();
         if (ActivePlayerStore.isActivePlayer(invite.from)) {
@@ -91,11 +92,16 @@ export class WsListener {
             opponentSocket.emit('invitation-response', invite);
         }
     }
-    onInvite(invite: IInvitationModel) {
+    onInvite(invite: IInvitationMessage) {
         console.log(`onInvite: ${JSON.stringify(invite)}`);
         invite.uuid = uuid();
         const opponentSocket: any = ActivePlayerStore.getActivePlayerSocket(invite.to);
         opponentSocket.emit('invitation', invite);
+    }
+    onMove(moves: IMoveMessage) {
+        console.log(`onMove: ${JSON.stringify(moves)}`);
+        const opponentSocket: any = ActivePlayerStore.getActivePlayerSocket(moves.to);
+        opponentSocket.emit('receive-moves', moves);
     }
     onMessage(message: any) {
         console.log(`[server](message): ${JSON.stringify(message)}`);
