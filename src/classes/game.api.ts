@@ -4,6 +4,7 @@ import {IGameModel, GameFactory, Game, Dealer, GameStatesEnum} from 's-n-m-lib';
 
 import { DynamoDB, DynamoDBClient, DynamoDBConfiguration } from '@aws-sdk/client-dynamodb-v2-node';
 import {PutItemInput, ScanInput} from '@aws-sdk/client-dynamodb-v2-node';
+import { ConfigurationServicePlaceholders } from 'aws-sdk/lib/config_service_placeholders';
 
 const config: DynamoDBConfiguration = {endpoint: 'http://localhost:8000'};
 const dynamoDb = new DynamoDB(config);
@@ -49,23 +50,10 @@ export class GameAPI {
                         }
                      });
                 })
-                .catch(async (e) => {
-                    const gameKeys: Attribute[] = [{name: 'uuid', type: AttributeTypesEnum.STRING}];
-                    await DynamoDbUtils.createTable('games', gameKeys);
-                    dynamoDb.putItem(item, function(err: any, data: any) {
-                      if (err) {
-                          reject(err);
-                      } else {
-                          resolve(newGame);
-                      }
-                   });
+                .catch((e) => {
+                    console.error('Table sm_games Does not exist');
                 });
 
-           // For each Game create a separate table to hold all its moves
-           // tableName = gameUuid
-           // key by moveId
-            const moveKeys: Attribute[] = [{name: 'id', type: AttributeTypesEnum.NUMERIC}];
-            DynamoDbUtils.createTable(`${newGame.uuid}`, moveKeys);
         });
     }
     static updateGame(game: IGameModel, nameChange: boolean, stateChange: boolean, activePlayerChange: boolean): Promise<boolean> {
@@ -129,7 +117,7 @@ export class GameAPI {
                 .then((d) => {this.scanGames(params, resolve, reject); })
                 .catch(async (err) => {
                     const gameKeys: Attribute[] = [{name: 'uuid', type: AttributeTypesEnum.STRING}];
-                    await DynamoDbUtils.createTable('games', gameKeys);
+                    // await DynamoDbUtils.createTable('games', gameKeys);
                     resolve([]);
                 });
 
@@ -160,14 +148,14 @@ export class GameAPI {
                     } catch (err) {
                         if (err.name === 'ResourceNotFoundException') {
                             const gameKeys: Attribute[] = [{name: 'uuid', type: AttributeTypesEnum.STRING}];
-                            DynamoDbUtils.createTable('games', gameKeys)
-                                .then(() => {
-                                    resolve([]);
-                                })
-                                .catch((e) => {
-                                    console.error(`Error ${e}`);
-                                    reject(e);
-                                });
+                            // DynamoDbUtils.createTable('games', gameKeys)
+                            //     .then(() => {
+                            //         resolve([]);
+                            //     })
+                            //     .catch((e) => {
+                            //         console.error(`Error ${e}`);
+                            //         reject(e);
+                            //     });
                         } else {
                             console.error(`Error ${err}`);
                             reject(err);

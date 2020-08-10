@@ -107,7 +107,7 @@ export class WsListener {
         console.log(`[server](message): ${JSON.stringify(message)}`);
         this.io.emit('message', message);
     }
-    async onLogin(p: {player: IPlayerModel}, socket: any) {
+    onLogin(p: {player: IPlayerModel}, socket: any) {
         console.log(`onLogin: ${JSON.stringify(p.player)} on ${socket.id}`);
         ActivePlayerStore.addActivePlayer(p.player, socket);
 
@@ -117,9 +117,11 @@ export class WsListener {
             .then((opponents: IPlayerModel[]) => {
                 ActivePlayerStore.addOpponents(p.player, opponents);
                 opponents.forEach((opp) => {
+
                     if (ActivePlayerStore.isActivePlayer(opp)) {
                         const opponentSocket: any = ActivePlayerStore.getActivePlayerSocket(opp);
                         if (opponentSocket) {
+                            console.log(`notify opponent: ${JSON.stringify(opp)}`);
                             opponentSocket.emit('player-online', p.player);
                         }
                     }

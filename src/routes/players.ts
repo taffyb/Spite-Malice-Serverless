@@ -5,17 +5,31 @@ import { v4 as uuid } from 'uuid';
 
 export const register = ( app: express.Application, prefix: string= '/api' ) => {
 
-    app.get( prefix + '/players/:uuid', ( req: any, res ) => {});
-    app.get( prefix + '/players/:uuid/opponents', ( req: any, res ) => {
-        const playerUuid = req.params.uuid;
-        const g: Promise<IPlayerModel[]> = PlayerAPI.getOpponents(playerUuid);
-        g
-            .then((opponents: IPlayerModel[]) => {res.send(opponents); })
+    app.get( prefix + '/players/:uuid', ( req: any, res ) => {
+        const playerUuid: string = req.params.uuid;
+        const attributesToGet: string[] = Object.keys(req.query).length > 0 ? Object.keys(req.query) : null;
+        PlayerAPI.getPlayer(playerUuid, attributesToGet)
+        .then((player: IPlayerModel) => {res.send(player); })
+        .catch((err) => {res.send(err); });
+    });
+    app.get( prefix + '/players', ( req: any, res ) => {});
+    app.post( prefix + '/players', ( req: any, res ) => {
+        const player: IPlayerModel = req.body;
+
+        player.uuid = uuid();
+
+        PlayerAPI.new(player)
+            .then((p: IPlayerModel) => {res.send(p); })
             .catch((err) => {res.send(err); });
     });
-    app.get( prefix + '/players/:uuid/profile', ( req: any, res ) => {});
-    app.get( prefix + '/players', ( req: any, res ) => {});
-    app.post( prefix + '/players', ( req: any, res ) => {});
-    app.put( prefix + '/players/:uuid', ( req: any, res ) => {});
+    app.put( prefix + '/players/:uuid', ( req: any, res ) => {
+        const player: IPlayerModel = req.body;
+
+        const playerUuid: string = req.params.uuid;
+
+        PlayerAPI.updatePlayer(playerUuid, player)
+            .then((p: IPlayerModel) => {res.send(p); })
+            .catch((err) => {res.send(err); });
+    });
     app.delete( prefix + '/players/:uuid', ( req: any, res ) => {});
 };
