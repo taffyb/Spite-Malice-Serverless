@@ -62,26 +62,36 @@ export class PlayerAPI {
 
     static updatePlayer(playerUuid: string, update: any): Promise<IPlayerModel> {
         return new Promise<IPlayerModel>((resolve, reject) => {
-            const expressionMap: any = {name: 'n', profile: 'p', status: 's'};
+            const expressionMap: any = {name: 'n', profile: 'p', status: 's', opponents: 'o'};
             const expressionAttributeNames: any = {'#t': 'updated'};
             const expressionAttributeValues: any = {':t': Date.now()};
             const item: any = {
                                 TableName : PLAYERS_TABLE,
                                 Key: {uuid: playerUuid}
                             };
-            let updateExpression = 'set #t=:t';
+            let updateAddExpression = 'ADD ';
+            let updateSetExpression = 'SET #t=:t';
+            let hasArrayCount = 0;
+            console.log(`Update: ${JSON.stringify(update, null, 2)}`);
             Object.keys(update).forEach((key, i) => {
                 if (!expressionMap[key]) {
                     reject(`Unknown Attribute: '${key}'`);
                 }
-                updateExpression += `, #${expressionMap[key]}=:${expressionMap[key]}`;
+                if (Array.isArray(update[key])) {
+                    updateAddExpression += (hasArrayCount > 0 ? ',' : '') + `#${expressionMap[key]} :${expressionMap[key]}`;
+                    expressionAttributeValues[`:${expressionMap[key]}`] = docClient.createSet(update[key]);
+                    hasArrayCount += 1;
+                } else {
+                    updateSetExpression += `, #${expressionMap[key]}=:${expressionMap[key]}`;
+                    expressionAttributeValues[`:${expressionMap[key]}`] = update[key];
+                }
                 expressionAttributeNames[`#${expressionMap[key]}`] = key;
-                expressionAttributeValues[`:${expressionMap[key]}`] = update[key];
             });
             item.ExpressionAttributeNames = expressionAttributeNames;
             item.ExpressionAttributeValues = expressionAttributeValues;
-            item.UpdateExpression = updateExpression;
-            // console.log(`Item: ${JSON.stringify(item, null, 2)}`);
+            item.UpdateExpression = updateSetExpression + (hasArrayCount > 0 ? ' ' + updateAddExpression : '');
+            item.ReturnValues = 'ALL_NEW';
+            console.log(`Item: ${JSON.stringify(item, null, 2)}`);
 
             docClient.update(item, (err: any, data: any) => {
                 if (err) {
