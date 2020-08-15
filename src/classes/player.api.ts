@@ -6,14 +6,16 @@ import {IPlayerModel, DEFAULT_PROFILE, Opponent} from 's-n-m-lib';
 AWS.config.update({region: 'eu-west-2'});
 
 const docClient = new AWS.DynamoDB.DocumentClient();
-const PLAYERS_TABLE = 'sm_players';
+const TABLE_NAME = 'sm_players';
+const EXPRESSION_MAP: any = {name: 'n', profile: 'p', status: 's', opponents: 'o'};
+
 export class PlayerAPI {
 
     static new(player: IPlayerModel): Promise<IPlayerModel> {
         return new Promise<IPlayerModel>((resolve, reject) => {
 
             const item = {
-                TableName: PLAYERS_TABLE,
+                TableName: TABLE_NAME,
                 Item: {
                     'created': Date.now(),
                     'uuid': player.uuid,
@@ -21,7 +23,7 @@ export class PlayerAPI {
                 }
             };
 
-            const exists = DynamoDbUtils.tableExists(PLAYERS_TABLE);
+            const exists = DynamoDbUtils.tableExists(TABLE_NAME);
             exists
             .then((d) => {
                 docClient.put(item, (err: any, data: any) => {
@@ -34,7 +36,7 @@ export class PlayerAPI {
                 });
             })
             .catch((err) => {
-                console.error(`Table: ${PLAYERS_TABLE} Does not exist`);
+                console.error(`Table: ${TABLE_NAME} Does not exist`);
             });
         });
     }
@@ -42,7 +44,7 @@ export class PlayerAPI {
     static getPlayer(playerUuid: string, attributesToGet: string[]= null): Promise<IPlayerModel> {
 
         const item = {
-            TableName: PLAYERS_TABLE,
+            TableName: TABLE_NAME,
             Key: {
                 'uuid': playerUuid
             },
@@ -62,11 +64,10 @@ export class PlayerAPI {
 
     static updatePlayer(playerUuid: string, update: any): Promise<IPlayerModel> {
         return new Promise<IPlayerModel>((resolve, reject) => {
-            const expressionMap: any = {name: 'n', profile: 'p', status: 's', opponents: 'o'};
             const expressionAttributeNames: any = {'#t': 'updated'};
             const expressionAttributeValues: any = {':t': Date.now()};
             const item: any = {
-                                TableName : PLAYERS_TABLE,
+                                TableName : TABLE_NAME,
                                 Key: {uuid: playerUuid}
                             };
             let updateAddExpression = 'ADD ';
@@ -74,23 +75,23 @@ export class PlayerAPI {
             let hasArrayCount = 0;
             console.log(`Update: ${JSON.stringify(update, null, 2)}`);
             Object.keys(update).forEach((key, i) => {
-                if (!expressionMap[key]) {
+                if (!EXPRESSION_MAP[key]) {
                     reject(`Unknown Attribute: '${key}'`);
                 }
                 if (Array.isArray(update[key])) {
-                    updateAddExpression += (hasArrayCount > 0 ? ',' : '') + `#${expressionMap[key]} :${expressionMap[key]}`;
-                    expressionAttributeValues[`:${expressionMap[key]}`] = docClient.createSet(update[key]);
+                    updateAddExpression += (hasArrayCount > 0 ? ',' : '') + `#${EXPRESSION_MAP[key]} :${EXPRESSION_MAP[key]}`;
+                    expressionAttributeValues[`:${EXPRESSION_MAP[key]}`] = docClient.createSet(update[key]);
                     hasArrayCount += 1;
                 } else {
-                    updateSetExpression += `, #${expressionMap[key]}=:${expressionMap[key]}`;
-                    expressionAttributeValues[`:${expressionMap[key]}`] = update[key];
+                    updateSetExpression += `, #${EXPRESSION_MAP[key]}=:${EXPRESSION_MAP[key]}`;
+                    expressionAttributeValues[`:${EXPRESSION_MAP[key]}`] = update[key];
                 }
-                expressionAttributeNames[`#${expressionMap[key]}`] = key;
+                expressionAttributeNames[`#${EXPRESSION_MAP[key]}`] = key;
             });
             item.ExpressionAttributeNames = expressionAttributeNames;
             item.ExpressionAttributeValues = expressionAttributeValues;
             item.UpdateExpression = updateSetExpression + (hasArrayCount > 0 ? ' ' + updateAddExpression : '');
-            item.ReturnValues = 'ALL_NEW';
+            // item.ReturnValues = 'ALL_NEW';
             console.log(`Item: ${JSON.stringify(item, null, 2)}`);
 
             docClient.update(item, (err: any, data: any) => {
@@ -107,7 +108,7 @@ export class PlayerAPI {
     static getOpponents(playerUuid: string): Promise<IPlayerModel[]> {
 
         const item = {
-            TableName: PLAYERS_TABLE,
+            TableName: TABLE_NAME,
             Key: {
                 'uuid': playerUuid
             },
