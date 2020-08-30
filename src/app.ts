@@ -4,7 +4,7 @@ import * as Io from 'socket.io';
 import logger from 'morgan';
 import bodyParser from 'body-parser';
 import * as playerRoutes from './routes/players';
-import * as gameRoutes from './routes/games';
+// import * as gameRoutes from './routes/games';
 import {WsListener} from './classes/ws.listener';
 import dotenv from 'dotenv';
 import {IMoveModel} from 's-n-m-lib';
@@ -40,6 +40,6 @@ app.get( '/', ( req: any, res: any ) => {
 
 // REGISTER OUR ROUTES -------------------------------
 playerRoutes.register(app);
-gameRoutes.register(app);
+// gameRoutes.register(app);
 
 
