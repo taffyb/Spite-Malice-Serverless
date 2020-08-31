@@ -2,7 +2,7 @@
 swagger: "2.0"
 info:
   description: "The Spite and Malice API"
-  version: "2020-08-31T09:21:31Z"
+  version: "2020-08-31T10:10:41Z"
   title: "Spite-n-Malice"
 host: "fnze4245b6.execute-api.eu-west-2.amazonaws.com"
 basePath: "/dev"
@@ -150,6 +150,8 @@ paths:
         type: "mock"
   /players/{playeruuid}/opponents:
     get:
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -163,11 +165,14 @@ paths:
           schema:
             $ref: "#/definitions/Empty"
       x-amazon-apigateway-integration:
-        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:841044393207:function:sm_get_player_opponents/invocations"
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:841044393207:function:sm_get_opponents/invocations"
         responses:
           default:
             statusCode: "200"
-        passthroughBehavior: "when_no_match"
+        requestTemplates:
+          application/json: "#set($path=$input.params().get('path'))\n{\n    \"playerUuid\"\
+            :\"$path.get('playeruuid')\"\n}"
+        passthroughBehavior: "when_no_templates"
         httpMethod: "POST"
         contentHandling: "CONVERT_TO_TEXT"
         type: "aws"
