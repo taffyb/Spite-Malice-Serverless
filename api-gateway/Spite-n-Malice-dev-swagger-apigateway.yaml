@@ -2,7 +2,7 @@
 swagger: "2.0"
 info:
   description: "The Spite and Malice API"
-  version: "2020-08-30T16:06:42Z"
+  version: "2020-08-31T09:21:31Z"
   title: "Spite-n-Malice"
 host: "fnze4245b6.execute-api.eu-west-2.amazonaws.com"
 basePath: "/dev"
@@ -11,6 +11,8 @@ schemes:
 paths:
   /players:
     post:
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       responses:
@@ -23,7 +25,9 @@ paths:
         responses:
           default:
             statusCode: "200"
-        passthroughBehavior: "when_no_match"
+        requestTemplates:
+          application/json: "$input.json('$')"
+        passthroughBehavior: "when_no_templates"
         httpMethod: "POST"
         contentHandling: "CONVERT_TO_TEXT"
         type: "aws"
