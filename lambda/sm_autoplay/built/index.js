@@ -1,12 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.lambdaHandler = void 0;
 const s_n_m_lib_1 = require("s-n-m-lib");
-exports.lambdaHandler = async (event) => {
+const find_moves_1 = require("./lib/find-moves");
+exports.lambdaHandler = async (event, context, callback) => {
     const game = s_n_m_lib_1.GameFactory.gameFromInterface(event.game);
-    return {
-        statusCode: 200,
-        body: `Queries: `
-    };
+    const moves = [];
+    moves.push(...find_moves_1.RoboPlayer.findMoves(game.activePlayer, game.cards));
+    callback(moves);
 };
 //# sourceMappingURL=index.js.map
