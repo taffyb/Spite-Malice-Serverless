@@ -14,14 +14,16 @@ export class Utils{
         return score;        
     }
 
-    static applyMove(cards:ICardModel[][],move:IMoveModel){
-        cards[move.from].pop;
+    static applyMove(cards:ICardModel[][],move:IMoveModel):ICardModel[][]{
+        cards[move.from].pop();
         cards[move.to].push(new Card(move.card,move.to));
+
+        return cards;
     }
     static cardsInHand(cards:ICardModel[][],playerIdx:number):number{
         let cardsInHand=5;
-        for(let h=0;h<=4;h++){
-            if(cards[PositionsEnum.PLAYER_HAND_1+(playerIdx*10)+h].length>0){
+        for(let h=0;h<5;h++){
+            if(cards[PositionsEnum.PLAYER_HAND_1+(playerIdx*10)+h].length==0){
                 cardsInHand -=1;
             }
         }
@@ -63,13 +65,43 @@ export class Utils{
     }
 
     static getTopMove(moves:AutoMove[]):IMoveModel{
-        let topMove:AutoMove=moves[0];
+        let topMoves:IMoveModel[]=[];
 
-        moves.forEach((m:AutoMove)=>{
-            if(m.score>topMove.score){
-                topMove = m;
+        //sort moves by score
+        moves.sort((a:AutoMove,b:AutoMove)=>{return b.score-a.score});
+        let topScore = moves[0].score
+        //collect all moves with the highest score
+        // console.log(`TopScore:${topScore}`)
+        for( let i=0;i<moves.length;i++){
+            let m:AutoMove = moves[i];
+            if(m.score==topScore){
+                topMoves.push(m);
+            }else{
+                break;
             }
+        }
+        // console.log(`topMoves.length:${topMoves.length}`)
+        // randomly pick of the top moves
+        let topMoveIdx:number = Math.floor( Math.random()*(topMoves.length))+1;
+        return topMoves[topMoveIdx-1];
+    }
+    static cardsToString(cards:ICardModel[][]):string{
+        let out:string="";
+
+        cards.forEach((pos:ICardModel[],posIdx:number)=>{
+            out+="[";
+            pos.forEach((c:ICardModel,cIdx:number)=>{
+                out+=c.cardNo;
+                if(cIdx!=pos.length-1){
+                    out+=",";
+                }
+            });
+            out+="]";
+            if(posIdx!=cards.length-1){
+                out+=",";
+            }
+            out+="\n";
         });
-        return topMove;
+        return out;
     }
 }

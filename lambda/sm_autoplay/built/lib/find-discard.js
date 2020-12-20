@@ -25,11 +25,9 @@ class DiscardMoves {
         //score each move
         moves.forEach((m) => {
             let score = 0;
-            //does it continue a sequence?
             let diffFromTo = s_n_m_lib_1.SMUtils.diff(cards, m.from, m.to);
             let diffFromPile = s_n_m_lib_1.SMUtils.diff(cards, m.from, s_n_m_lib_1.PositionsEnum.PLAYER_PILE + (10 * playerIdx));
             let sequence = autoplay_utils_1.Utils.getSequence(cards, m.to, playerIdx);
-            // console.log(`diffFromTo: ${diffFromTo}`);
             if (diffFromTo == 0) {
                 score += (move_enum_1.MoveScoresEnum.DISCARD_IN_SEQUENCE);
                 if (sequence.length > 1) {
@@ -45,6 +43,8 @@ class DiscardMoves {
             else {
                 score += (move_enum_1.MoveScoresEnum.DISCARD_BLOCK_SEQUENCE + sequence.value);
             }
+            //Look at the GAME_STACKS
+            //Look at the opponent's PILE & STACKS
             m.score = score;
         });
         return moves;

@@ -26,11 +26,10 @@ import { MoveScoresEnum } from "./move-enum";
         //score each move
         moves.forEach((m)=>{
             let score:number=0;
-            //does it continue a sequence?
             let diffFromTo:number=SMUtils.diff(cards,m.from,m.to);
             let diffFromPile:number=SMUtils.diff(cards,m.from,PositionsEnum.PLAYER_PILE+(10*playerIdx));
             let sequence = Utils.getSequence(cards,m.to,playerIdx);
-            // console.log(`diffFromTo: ${diffFromTo}`);
+
             if(diffFromTo==0){
                 score+=(MoveScoresEnum.DISCARD_IN_SEQUENCE);
                 if(sequence.length>1){
@@ -44,7 +43,10 @@ import { MoveScoresEnum } from "./move-enum";
             }else{
                 score+=(MoveScoresEnum.DISCARD_BLOCK_SEQUENCE+ sequence.value);
             }
-                  
+            
+            //Look at the GAME_STACKS
+            //Look at the opponent's PILE & STACKS
+
             m.score=score;
         });
         

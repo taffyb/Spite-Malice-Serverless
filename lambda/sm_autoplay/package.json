@@ -13,7 +13,7 @@
     "@types/aws-lambda": "^8.10.51",
     "@types/node": "^13.13.5",
     "aws-sdk": "^2.812.0",
-    "s-n-m-lib": "^1.3.9",
+    "s-n-m-lib": "^1.3.10",
     "typescript": "^3.8.3"
   }
 }

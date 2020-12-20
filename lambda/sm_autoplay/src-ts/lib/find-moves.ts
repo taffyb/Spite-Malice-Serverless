@@ -5,17 +5,19 @@ import { Utils } from './autoplay-utils';
 
 export class RoboPlayer
 {
-    static findMoves(player:number,cards:ICardModel[][]):IMoveModel[]{
-        const moves:IMoveModel[]=[];
+    static findMoves(playerIdx:number,cards:ICardModel[][]):AutoMove[]{
+        let moves:AutoMove[]=[];
+
+        moves = this.findNextMoves(playerIdx,cards,moves);
         return moves;
+
     }
 
-    findNextMoves(playerIdx:number,cards:ICardModel[][],possibleMoves:AutoMove[],depth:number=0):AutoMove[]{
+    static findNextMoves(playerIdx:number,cards:ICardModel[][],possibleMoves:AutoMove[],depth:number=0):AutoMove[]{
         depth+=1;
         let m:AutoMove;
         let moves:AutoMove[]=[];
         let allMoves:AutoMove[]=[];
-        // let activePlayer:Player = game.players[game.activePlayer];
         let bail=false;
     
         for(let pp:number=PositionsEnum.PLAYER_PILE+(10*playerIdx);pp<=PositionsEnum.PLAYER_STACK_4+(10*playerIdx);pp++){
@@ -67,13 +69,14 @@ export class RoboPlayer
             case PositionsEnum.PLAYER_HAND_3+(10*playerIdx):
             case PositionsEnum.PLAYER_HAND_4+(10*playerIdx):
             case PositionsEnum.PLAYER_HAND_5+(10*playerIdx):
-                if(SMUtils.getTopCard(cards[pp])!=CardsEnum.NO_CARD){  
+                console.log(`Look for moves from Players Hand Pos:${pp}`);
+                if(cards[pp].length>0){  
              //  Possible moves from Hand to Centre Stack              
                   for(let gp=PositionsEnum.STACK_1;gp<=PositionsEnum.STACK_4;gp++){
                       if(SMUtils.isJoker(cards[pp]) || (SMUtils.diff(cards,pp,gp)==1)){
                         m=new AutoMove();
                         m.from=pp;
-                        m.card=SMUtils.getTopCard(cards[pp]);
+                        m.card=cards[pp][0].cardNo;
                         m.to=gp;
                         m.score=(MoveScoresEnum.PLAY_FROM_HAND+MoveScoresEnum.ADD_TO_STACK); 
                         moves.push(m);
@@ -82,10 +85,10 @@ export class RoboPlayer
                   
              //  Posible moves from Hand to Player Stack (an open space)              
                   for(let ps=PositionsEnum.PLAYER_STACK_1+(10*playerIdx);ps<=PositionsEnum.PLAYER_STACK_4+(10*playerIdx);ps++){
-                      if(SMUtils.getTopCard(cards[ps])==CardsEnum.NO_CARD){
+                      if(cards[ps].length==0){
                         m=new AutoMove();
                         m.from=pp;
-                        m.card=SMUtils.getTopCard(cards[ps]);
+                        m.card=cards[pp][0].cardNo;
                         m.to=ps;
                         m.score=(MoveScoresEnum.OPEN_A_SPACE+SMUtils.toFaceNumber(SMUtils.getTopCard(cards[ps])));
                         moves.push(m);
@@ -129,8 +132,12 @@ export class RoboPlayer
                   //If this is a move from the PILE we can't look further as we don't know what the next card is.
                     possibleMoves.push(m);
                 }else{
-                    Utils.applyMove(localCards,m);
-                    if(Utils.cardsInHand(localCards,playerIdx)==0){
+                    // console.log(`*** Before Apply Move FromLength:${localCards[m.from].length} ToLength:${localCards[m.to].length})}`);
+                    localCards = Utils.applyMove(localCards,m);
+                    // console.log(`*** After Apply Move FromLength:${localCards[m.from].length} ToLength:${localCards[m.to].length})}`);
+                    let cih = Utils.cardsInHand(localCards,playerIdx);
+                    // console.log(`Cards in hand (after apply move ${m.card} ${m.from}=>${m.to}): ${cih} `);
+                    if(cih==0){
                         //Increase score of move because will get 5 new cards
                         m.score+=MoveScoresEnum.REFRESH_HAND;
                         //Stop looking for further moves until have refilled hand
@@ -151,5 +158,26 @@ export class RoboPlayer
         return allMoves;
     }
 
+    //     static diff(cards:ICardModel[][],p1:number,p2:number):number{
+    //     let c1:number,c2:number;
+    //     const isPlayerPosition=(p:number):boolean=>{
+    //         if(p >=PositionsEnum.PLAYER_PILE && p<=PositionsEnum.PLAYER_STACK_4+10){
+    //             return true;
+    //         }
+    //     }
+    //     if(isPlayerPosition(p1)){
+    //         c1=SMUtils.toFaceNumber(SMUtils.getTopCard(cards[p1]))
+    //     }else{
+    //         c1=SMUtils.getFaceNumber(cards[p1],cards[p1].length-1);
+    //     }
+    //     if(isPlayerPosition(p2)){
+    //         c2=SMUtils.toFaceNumber(SMUtils.getTopCard(cards[p2]))
+    //     }else{
+    //         c2=SMUtils.getFaceNumber(cards[p2],cards[p2].length-1);
+    //     }
+    //     let diff = (c1-c2);
+    //     console.log(`p1[${p1}]:${c1},p2[${p2}]:${c2} diff:${diff}`);
+    //     return diff;
+    // }
 
 }

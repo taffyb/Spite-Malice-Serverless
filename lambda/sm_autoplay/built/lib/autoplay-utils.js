@@ -12,13 +12,14 @@ class Utils {
         return score;
     }
     static applyMove(cards, move) {
-        cards[move.from].pop;
+        cards[move.from].pop();
         cards[move.to].push(new s_n_m_lib_1.Card(move.card, move.to));
+        return cards;
     }
     static cardsInHand(cards, playerIdx) {
         let cardsInHand = 5;
-        for (let h = 0; h <= 4; h++) {
-            if (cards[s_n_m_lib_1.PositionsEnum.PLAYER_HAND_1 + (playerIdx * 10) + h].length > 0) {
+        for (let h = 0; h < 5; h++) {
+            if (cards[s_n_m_lib_1.PositionsEnum.PLAYER_HAND_1 + (playerIdx * 10) + h].length == 0) {
                 cardsInHand -= 1;
             }
         }
@@ -57,13 +58,43 @@ class Utils {
         return { length: sequenceLength, value: sequenceValue };
     }
     static getTopMove(moves) {
-        let topMove = moves[0];
-        moves.forEach((m) => {
-            if (m.score > topMove.score) {
-                topMove = m;
+        let topMoves = [];
+        //sort moves by score
+        moves.sort((a, b) => { return b.score - a.score; });
+        let topScore = moves[0].score;
+        //collect all moves with the highest score
+        // console.log(`TopScore:${topScore}`)
+        for (let i = 0; i < moves.length; i++) {
+            let m = moves[i];
+            if (m.score == topScore) {
+                topMoves.push(m);
             }
+            else {
+                break;
+            }
+        }
+        // console.log(`topMoves.length:${topMoves.length}`)
+        // randomly pick of the top moves
+        let topMoveIdx = Math.floor(Math.random() * (topMoves.length)) + 1;
+        return topMoves[topMoveIdx - 1];
+    }
+    static cardsToString(cards) {
+        let out = "";
+        cards.forEach((pos, posIdx) => {
+            out += "[";
+            pos.forEach((c, cIdx) => {
+                out += c.cardNo;
+                if (cIdx != pos.length - 1) {
+                    out += ",";
+                }
+            });
+            out += "]";
+            if (posIdx != cards.length - 1) {
+                out += ",";
+            }
+            out += "\n";
         });
-        return topMove;
+        return out;
     }
 }
 exports.Utils = Utils;
