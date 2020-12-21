@@ -1,4 +1,4 @@
-import {  Card, ICardModel, IMoveModel, PositionsEnum, SMUtils } from "s-n-m-lib";
+import {  Card, CardsEnum, ICardModel, IMoveModel, PositionsEnum, SMUtils } from "s-n-m-lib";
 import { AutoMove } from "./auto-move";
 
 export class Utils{
@@ -6,14 +6,57 @@ export class Utils{
     static calculateOverallScore(finalMove:AutoMove):number{
         let move:AutoMove=finalMove;
         let score:number=move.score;
+        let i:number=0;
         
         while(move.previousMove){
             score+=finalMove.previousMove.score;
             move=move.previousMove;
+            i++;
         }
         return score;        
     }
+    static allPossibleMoves(moves:AutoMove[]):AutoMove[]{
+        let possibleMoves:AutoMove[]=[];
 
+        
+        if(moves){
+            moves.forEach((m)=>{
+                // console.log(`moves:${moves.length} next:${m.nextMoves?m.nextMoves.length:0}`);
+                if(m.nextMoves.length>0){
+                    possibleMoves = possibleMoves.concat(Utils.allPossibleMoves(m.nextMoves));
+                    // console.log(`Next Moves - possibleMoves:${possibleMoves.length}`);
+                }else{
+                    possibleMoves.push(m);
+                    // console.log(`possibleMoves:${possibleMoves.length}`);
+                }
+            });
+        }
+        return possibleMoves;
+    }
+    static turn(move:AutoMove):IMoveModel[]{
+        let m:AutoMove = move;
+        let turn:IMoveModel[]=[];
+        let i:number=0;
+        
+        //build an array of moves
+        turn.push(m)
+        while(m.previousMove){
+            turn.push(m.previousMove);
+            m=m.previousMove;
+        }
+        turn = turn.reverse();
+        return turn;
+    }
+    static freePlayerStacks(cards:ICardModel[][],playerIdx:number):number{
+        let freePlayerStacks:number=0;
+        for (let i =0;i<4;i++){
+            if(cards[PositionsEnum.PLAYER_STACK_1+i+(10*playerIdx)].length==0){
+                freePlayerStacks+=1;
+            }
+        }
+
+        return freePlayerStacks;
+    }
     static applyMove(cards:ICardModel[][],move:IMoveModel):ICardModel[][]{
         cards[move.from].pop();
         cards[move.to].push(new Card(move.card,move.to));
@@ -64,8 +107,8 @@ export class Utils{
         return {length:sequenceLength,value:sequenceValue};
     }
 
-    static getTopMove(moves:AutoMove[]):IMoveModel{
-        let topMoves:IMoveModel[]=[];
+    static getTopMove(moves:AutoMove[]):AutoMove{
+        let topMoves:AutoMove[]=[];
 
         //sort moves by score
         moves.sort((a:AutoMove,b:AutoMove)=>{return b.score-a.score});

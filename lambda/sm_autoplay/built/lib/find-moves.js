@@ -6,12 +6,13 @@ const auto_move_1 = require("./auto-move");
 const autoplay_utils_1 = require("./autoplay-utils");
 class RoboPlayer {
     static findMoves(playerIdx, cards) {
-        let moves = [];
-        moves = this.findNextMoves(playerIdx, cards, moves);
-        return moves;
+        let allPossibleMoves = [];
+        this.findNextMoves(playerIdx, cards, allPossibleMoves);
+        return allPossibleMoves;
     }
     static findNextMoves(playerIdx, cards, possibleMoves, depth = 0) {
-        depth += 1;
+        // console.log(`findNextMoves:${depth}`);
+        // depth+=1;
         let m;
         let moves = [];
         let allMoves = [];
@@ -37,9 +38,6 @@ class RoboPlayer {
                         else {
                             //If the card on the player's PILE is 1 greater than the STACK then Move.
                             if (s_n_m_lib_1.SMUtils.diff(cards, pp, gp) == 1) {
-                                //                            let card1=SMUtils.toFaceNumber(cards[pp][cards[pp].length-1].cardNo);
-                                //                            let card2=SMUtils.toFaceNumber(cards[gp][cards[gp].length-1].cardNo);
-                                //                            console.log(`depth==${depth} pos1=${pp}/${card1}, pos2=${gp}/${card2} => ${card1 - card2}`);
                                 m = new auto_move_1.AutoMove();
                                 m.from = pp;
                                 m.card = s_n_m_lib_1.SMUtils.getTopCard(cards[pp]);
@@ -52,7 +50,6 @@ class RoboPlayer {
                             }
                         }
                     }
-                    //                if(moves.length>0){console.log(`Move from PILE: \n${JSON.stringify(moves)}`);}
                     allMoves.push(...moves);
                     moves = [];
                     break;
@@ -61,22 +58,23 @@ class RoboPlayer {
                 case s_n_m_lib_1.PositionsEnum.PLAYER_HAND_3 + (10 * playerIdx):
                 case s_n_m_lib_1.PositionsEnum.PLAYER_HAND_4 + (10 * playerIdx):
                 case s_n_m_lib_1.PositionsEnum.PLAYER_HAND_5 + (10 * playerIdx):
-                    console.log(`Look for moves from Players Hand Pos:${pp}`);
                     if (cards[pp].length > 0) {
+                        let canMoveToCentre = false;
                         //  Possible moves from Hand to Centre Stack              
                         for (let gp = s_n_m_lib_1.PositionsEnum.STACK_1; gp <= s_n_m_lib_1.PositionsEnum.STACK_4; gp++) {
                             if (s_n_m_lib_1.SMUtils.isJoker(cards[pp]) || (s_n_m_lib_1.SMUtils.diff(cards, pp, gp) == 1)) {
+                                canMoveToCentre = true;
                                 m = new auto_move_1.AutoMove();
                                 m.from = pp;
                                 m.card = cards[pp][0].cardNo;
                                 m.to = gp;
-                                m.score = (move_enum_1.MoveScoresEnum.PLAY_FROM_HAND + move_enum_1.MoveScoresEnum.ADD_TO_STACK);
+                                m.score = (move_enum_1.MoveScoresEnum.PLAY_FROM_HAND + move_enum_1.MoveScoresEnum.ADD_TO_CENTER_STACK);
                                 moves.push(m);
                             }
                         }
                         //  Posible moves from Hand to Player Stack (an open space)              
                         for (let ps = s_n_m_lib_1.PositionsEnum.PLAYER_STACK_1 + (10 * playerIdx); ps <= s_n_m_lib_1.PositionsEnum.PLAYER_STACK_4 + (10 * playerIdx); ps++) {
-                            if (cards[ps].length == 0) {
+                            if (cards[ps].length == 0 && !canMoveToCentre) { //move to center in one step.
                                 m = new auto_move_1.AutoMove();
                                 m.from = pp;
                                 m.card = cards[pp][0].cardNo;
@@ -95,12 +93,16 @@ class RoboPlayer {
                 case s_n_m_lib_1.PositionsEnum.PLAYER_STACK_4 + (10 * playerIdx):
                     //    Posible moves from Player Stack to Centre Stack                
                     for (let gp = s_n_m_lib_1.PositionsEnum.STACK_1; gp <= s_n_m_lib_1.PositionsEnum.STACK_4; gp++) {
+                        // console.log(`Player Hand[${pp}] cards:${cards[pp].length} topCard:${SMUtils.getFaceNumber(cards[pp])} gameStack:${SMUtils.getFaceNumber(cards[gp])} diff:${SMUtils.diff(cards, pp, gp)}`);
                         if (s_n_m_lib_1.SMUtils.isJoker(cards[pp]) || s_n_m_lib_1.SMUtils.diff(cards, pp, gp) == 1) {
                             m = new auto_move_1.AutoMove();
                             m.from = pp;
                             m.card = s_n_m_lib_1.SMUtils.getTopCard(cards[pp]);
                             m.to = gp;
-                            m.score = (move_enum_1.MoveScoresEnum.PLAY_FROM_STACK + move_enum_1.MoveScoresEnum.ADD_TO_STACK);
+                            m.score = (move_enum_1.MoveScoresEnum.PLAY_FROM_STACK + move_enum_1.MoveScoresEnum.ADD_TO_CENTER_STACK);
+                            if (cards[pp].length == 1) {
+                                m.score += move_enum_1.MoveScoresEnum.OPEN_A_SPACE;
+                            }
                             moves.push(m);
                         }
                     }
@@ -120,18 +122,17 @@ class RoboPlayer {
                     possibleMoves.push(m);
                 }
                 else {
-                    // console.log(`*** Before Apply Move FromLength:${localCards[m.from].length} ToLength:${localCards[m.to].length})}`);
                     localCards = autoplay_utils_1.Utils.applyMove(localCards, m);
-                    // console.log(`*** After Apply Move FromLength:${localCards[m.from].length} ToLength:${localCards[m.to].length})}`);
                     let cih = autoplay_utils_1.Utils.cardsInHand(localCards, playerIdx);
-                    // console.log(`Cards in hand (after apply move ${m.card} ${m.from}=>${m.to}): ${cih} `);
                     if (cih == 0) {
                         //Increase score of move because will get 5 new cards
                         m.score += move_enum_1.MoveScoresEnum.REFRESH_HAND;
+                        possibleMoves.push(m);
                         //Stop looking for further moves until have refilled hand
                     }
                     else {
-                        m.nextMoves = this.findNextMoves(playerIdx, localCards, possibleMoves, depth);
+                        let nextMoves = this.findNextMoves(playerIdx, localCards, possibleMoves, depth + 1);
+                        m.nextMoves = nextMoves;
                         for (let i = 0; i < m.nextMoves.length; i++) {
                             m.nextMoves[i].previousMove = m;
                         }

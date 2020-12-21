@@ -2,26 +2,34 @@ import { CardsEnum, ICardModel, IMoveModel, PositionsEnum } from 's-n-m-lib';
 import { AutoMove } from '../lib/auto-move';
 import { Utils } from '../lib/autoplay-utils';
 import { RoboPlayer } from '../lib/find-moves';
-import {cards as inArr} from '../tests/find-moves-refill_hand';
+import {cards as inArr} from '../tests/find-moves-sequence-to-game-stack';
 
 export class TestFindMoves{
     static execute():boolean{
+        const playerIdx:number=0;
         let cards:ICardModel[][]=Utils.cardsFromArray(inArr);
-        const moves:AutoMove[]= RoboPlayer.findMoves(0,cards);
+        const moves:AutoMove[]= RoboPlayer.findMoves(playerIdx,cards);
 
-        // console.log(`{cards:${JSON.stringify(cards)}`);
-        moves.sort((a:AutoMove,b:AutoMove)=>{return a.from-b.from;});
-        moves.forEach((m)=>{
-            console.log(`{from:${PositionsEnum[ m.from]},card:${CardsEnum[ m.card]},to:${PositionsEnum[ m.to]},score:${m.score}}`);
-        });
-        let topMove:IMoveModel=null;
-        if(moves.length>1){
-            topMove=Utils.getTopMove(moves);
-        }else if(moves.length==1){
-            topMove=moves[0];
+        // console.log(`moves:${moves.length} \n${moves}`);
+        if(moves){
+            moves.forEach((m)=>{
+               m.score= Utils.calculateOverallScore(m);
+            });
         }
-        if(topMove!=null){
-            console.log(`TopMove {from:${PositionsEnum[topMove.from]},card:${CardsEnum[topMove.card]},to:${PositionsEnum[ topMove.to]}}`);
+        
+        moves.sort((a:AutoMove,b:AutoMove)=>{return a.score-b.score;});
+        
+        let topMove:AutoMove;
+        let turn:IMoveModel[]=[];
+        if(moves.length>0){
+            topMove=Utils.getTopMove(moves);
+            turn=Utils.turn(topMove);
+        }
+        if(turn.length>0){
+            turn.forEach((m:IMoveModel,i:number)=>{
+                console.log(`${"\t".repeat(i)}[${CardsEnum[m.card]}] ${m.from}=>${m.to}`);
+            });
+            
         }
         
         return true;

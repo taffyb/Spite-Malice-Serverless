@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var MoveScoresEnum;
 (function (MoveScoresEnum) {
     MoveScoresEnum[MoveScoresEnum["FROM_PILE"] = 1000] = "FROM_PILE";
-    MoveScoresEnum[MoveScoresEnum["ADD_TO_STACK"] = 100] = "ADD_TO_STACK";
+    MoveScoresEnum[MoveScoresEnum["ADD_TO_CENTER_STACK"] = 100] = "ADD_TO_CENTER_STACK";
     MoveScoresEnum[MoveScoresEnum["OPEN_A_SPACE"] = 9] = "OPEN_A_SPACE";
     MoveScoresEnum[MoveScoresEnum["PLAY_FROM_HAND"] = 5] = "PLAY_FROM_HAND";
     MoveScoresEnum[MoveScoresEnum["PLAY_FROM_STACK"] = 4] = "PLAY_FROM_STACK";

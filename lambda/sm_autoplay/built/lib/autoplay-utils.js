@@ -5,11 +5,52 @@ class Utils {
     static calculateOverallScore(finalMove) {
         let move = finalMove;
         let score = move.score;
+        let i = 0;
         while (move.previousMove) {
             score += finalMove.previousMove.score;
             move = move.previousMove;
+            i++;
         }
         return score;
+    }
+    static allPossibleMoves(moves) {
+        let possibleMoves = [];
+        if (moves) {
+            moves.forEach((m) => {
+                // console.log(`moves:${moves.length} next:${m.nextMoves?m.nextMoves.length:0}`);
+                if (m.nextMoves.length > 0) {
+                    possibleMoves = possibleMoves.concat(Utils.allPossibleMoves(m.nextMoves));
+                    // console.log(`Next Moves - possibleMoves:${possibleMoves.length}`);
+                }
+                else {
+                    possibleMoves.push(m);
+                    // console.log(`possibleMoves:${possibleMoves.length}`);
+                }
+            });
+        }
+        return possibleMoves;
+    }
+    static turn(move) {
+        let m = move;
+        let turn = [];
+        let i = 0;
+        //build an array of moves
+        turn.push(m);
+        while (m.previousMove) {
+            turn.push(m.previousMove);
+            m = m.previousMove;
+        }
+        turn = turn.reverse();
+        return turn;
+    }
+    static freePlayerStacks(cards, playerIdx) {
+        let freePlayerStacks = 0;
+        for (let i = 0; i < 4; i++) {
+            if (cards[s_n_m_lib_1.PositionsEnum.PLAYER_STACK_1 + i + (10 * playerIdx)].length == 0) {
+                freePlayerStacks += 1;
+            }
+        }
+        return freePlayerStacks;
     }
     static applyMove(cards, move) {
         cards[move.from].pop();

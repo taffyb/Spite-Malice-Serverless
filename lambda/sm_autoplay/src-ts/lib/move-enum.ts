@@ -1,6 +1,6 @@
 export enum MoveScoresEnum {
     FROM_PILE = 1000,
-    ADD_TO_STACK = 100,
+    ADD_TO_CENTER_STACK = 100,
     OPEN_A_SPACE = 9,
     PLAY_FROM_HAND = 5,
     PLAY_FROM_STACK = 4,
@@ -9,5 +9,5 @@ export enum MoveScoresEnum {
     DISCARD_OUT_OF_SEQUENCE = 0,
     DISCARD_SAME_CARD = 5,
     DISCARD_BLOCK_SEQUENCE = -4,
-    REFRESH_HAND = 50
+    REFRESH_HAND =50
 }
