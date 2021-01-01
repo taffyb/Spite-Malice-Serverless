@@ -7,7 +7,7 @@ const find_moves_sequence_to_game_stack_1 = require("../tests/find-moves-sequenc
 class TestFindMoves {
     static execute() {
         const playerIdx = 0;
-        let cards = autoplay_utils_1.Utils.cardsFromArray(find_moves_sequence_to_game_stack_1.cards);
+        let cards = autoplay_utils_1.Utils.intArr2CardArr(find_moves_sequence_to_game_stack_1.cards);
         const moves = find_moves_1.RoboPlayer.findMoves(playerIdx, cards);
         // console.log(`moves:${moves.length} \n${moves}`);
         if (moves) {

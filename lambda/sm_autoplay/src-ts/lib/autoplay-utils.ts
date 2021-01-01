@@ -1,3 +1,4 @@
+import { monitorEventLoopDelay } from "perf_hooks";
 import {  Card, CardsEnum, ICardModel, IMoveModel, PositionsEnum, SMUtils } from "s-n-m-lib";
 import { AutoMove } from "./auto-move";
 
@@ -36,10 +37,11 @@ export class Utils{
     static turn(move:AutoMove):IMoveModel[]{
         let m:AutoMove = move;
         let turn:IMoveModel[]=[];
-        let i:number=0;
+        
+        // console.log(`Move=>Turn ${m}`);
         
         //build an array of moves
-        turn.push(m)
+        turn.push(m);
         while(m.previousMove){
             turn.push(m.previousMove);
             m=m.previousMove;
@@ -72,7 +74,7 @@ export class Utils{
         }
         return cardsInHand;
     }
-    static cardsFromArray(inArr:number[][]):ICardModel[][]{
+    static intArr2CardArr(inArr:number[][]):ICardModel[][]{
         
         const cards:ICardModel[][]=[];
 
@@ -82,6 +84,18 @@ export class Utils{
                 cards[pos].push(new Card(inArr[pos][c],pos));
             }
         }
+        return cards;
+    }
+    static cardArr2IntArr(inArr:ICardModel[][]):number[][]{
+        const cards:number[][]=[];
+
+        for(let pos:number=PositionsEnum.PLAYER_PILE;pos<=PositionsEnum.RECYCLE;pos++){
+            cards.push([]);
+            for(let c:number=0;c<inArr[pos].length;c++){
+                cards[pos].push(inArr[pos][c].cardNo);
+            }
+        }
+
         return cards;
     }
     static getSequence(cards:ICardModel[][],p:number, playerIdx:number=0):{length:number,value:number}{
@@ -109,23 +123,29 @@ export class Utils{
 
     static getTopMove(moves:AutoMove[]):AutoMove{
         let topMoves:AutoMove[]=[];
+        let topMoveIdx:number=1;
 
-        //sort moves by score
-        moves.sort((a:AutoMove,b:AutoMove)=>{return b.score-a.score});
-        let topScore = moves[0].score
-        //collect all moves with the highest score
-        // console.log(`TopScore:${topScore}`)
-        for( let i=0;i<moves.length;i++){
-            let m:AutoMove = moves[i];
-            if(m.score==topScore){
-                topMoves.push(m);
-            }else{
-                break;
+        if(moves.length==0){
+            throw "NO MOVES";
+        }else if(moves.length>1){
+            //sort moves by score
+            moves.sort((a:AutoMove,b:AutoMove)=>{return b.score-a.score});
+            let topScore = moves[0].score
+            //collect all moves with the highest score
+            for( let i=0;i<moves.length;i++){
+                let m:AutoMove = moves[i];
+                if(m.score==topScore){
+                    topMoves.push(m);
+                }else{
+                    break;
+                }
+            }
+            // random pick of the top moves
+            if(topMoves.length>1){
+                topMoveIdx = Math.floor( Math.random()*(topMoves.length))+1;
             }
         }
-        // console.log(`topMoves.length:${topMoves.length}`)
-        // randomly pick of the top moves
-        let topMoveIdx:number = Math.floor( Math.random()*(topMoves.length))+1;
+        
         return topMoves[topMoveIdx-1];
     }
     static cardsToString(cards:ICardModel[][]):string{

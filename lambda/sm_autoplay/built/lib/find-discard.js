@@ -5,6 +5,10 @@ const auto_move_1 = require("./auto-move");
 const autoplay_utils_1 = require("./autoplay-utils");
 const move_enum_1 = require("./move-enum");
 class DiscardMoves {
+    static findBestDiscard(playerIdx, cards) {
+        const discards = DiscardMoves.findDiscardMoves(0, cards);
+        return autoplay_utils_1.Utils.getTopMove(discards);
+    }
     static findDiscardMoves(playerIdx, cards) {
         let moves = [];
         let m;

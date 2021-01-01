@@ -7,7 +7,7 @@ import {cards as inArr} from '../tests/find-moves-sequence-to-game-stack';
 export class TestFindMoves{
     static execute():boolean{
         const playerIdx:number=0;
-        let cards:ICardModel[][]=Utils.cardsFromArray(inArr);
+        let cards:ICardModel[][]=Utils.intArr2CardArr(inArr);
         const moves:AutoMove[]= RoboPlayer.findMoves(playerIdx,cards);
 
         // console.log(`moves:${moves.length} \n${moves}`);

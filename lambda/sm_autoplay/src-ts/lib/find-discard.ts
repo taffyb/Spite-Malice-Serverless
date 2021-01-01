@@ -1,9 +1,15 @@
-import { CardsEnum, ICardModel, PositionsEnum, SMUtils } from "s-n-m-lib";
+import { CardsEnum, ICardModel, IMoveModel, PositionsEnum, SMUtils } from "s-n-m-lib";
 import { AutoMove } from "./auto-move";
 import { Utils } from "./autoplay-utils";
 import { MoveScoresEnum } from "./move-enum";
 
  export class DiscardMoves{
+
+    static findBestDiscard(playerIdx:number,cards:ICardModel[][]):IMoveModel{
+        const discards:AutoMove[]= DiscardMoves.findDiscardMoves(0,cards);
+
+        return Utils.getTopMove(discards);
+    }
 
     static findDiscardMoves(playerIdx:number,cards:ICardModel[][]):AutoMove[]{
         let moves:AutoMove[]=[];
