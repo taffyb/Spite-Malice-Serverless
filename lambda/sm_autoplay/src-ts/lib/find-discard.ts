@@ -7,7 +7,8 @@ import { MoveScoresEnum } from "./move-enum";
 
     static findBestDiscard(playerIdx:number,cards:ICardModel[][]):IMoveModel{
         const discards:AutoMove[]= DiscardMoves.findDiscardMoves(0,cards);
-
+        console.log(`Possible Discards: ${discards.length}`);
+        
         return Utils.getTopMove(discards);
     }
 

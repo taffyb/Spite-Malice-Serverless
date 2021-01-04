@@ -5,7 +5,7 @@ import { Utils } from './autoplay-utils';
 
 export interface IPlayer{
     uuid:string;
-    nextMoves(cards: ICardModel[][]):IMoveModel[];
+    nextTurn(cards: ICardModel[][]):IMoveModel[];
 }
 
 export class Player implements IPlayer{
@@ -13,13 +13,19 @@ export class Player implements IPlayer{
     constructor(uuid:string, private idx:number){
         this.uuid=uuid;
     }
-    nextMoves(cards: ICardModel[][]): IMoveModel[] {
-        let possibleMoves:AutoMove[];
+    nextTurn(cards: ICardModel[][]): IMoveModel[] {
+        let possibleMoves:AutoMove[]=[];
 
-        possibleMoves= this.findNextMoves(this.idx,cards,[]);
+        this.findNextMoves(this.idx,cards,possibleMoves);
+        console.log(`POSSIBLE MOVES ${possibleMoves.length}`);
+        
         if(possibleMoves){
-            possibleMoves.forEach((m)=>{
-               m.score= Utils.calculateOverallScore(m);
+            possibleMoves.forEach((m,i)=>{
+                if(m){                    
+                    m.score= Utils.calculateOverallScore(m);
+                }else{
+                    possibleMoves.splice(i,1);
+                }
             });
         }
         
@@ -28,21 +34,23 @@ export class Player implements IPlayer{
         let topMove:AutoMove;
         let turn:IMoveModel[]=[];
         if(possibleMoves.length>1){
-            // console.log(`POSSIBLE MOVES ${possibleMoves.length}`);
             
+           console.log(`Player.nextTurn multiple possible moves (${possibleMoves.length})`);
             topMove=Utils.getTopMove(possibleMoves);
-            // console.log(`TOP MOVE: ${topMove.toString()}`);
             
             turn=Utils.turn(topMove);
+        }else if(possibleMoves.length==1){
+            turn=Utils.turn(possibleMoves[0]);
         }else{
-            turn.push(possibleMoves[0]);
+            throw "NO POSSIBLE MOVE"
         }
+        // console.log(`TURN length: ${turn.length}`);
 
         return turn;
     }
 
     private findNextMoves(playerIdx:number,cards:ICardModel[][],possibleMoves:AutoMove[],depth:number=0):AutoMove[]{
-        // console.log(`findNextMoves:${depth}`);
+    //    console.log(`Player.findNextMoves(depth=${depth})`);
         
         // depth+=1;
         let m:AutoMove;
@@ -99,7 +107,7 @@ export class Player implements IPlayer{
                   let canMoveToCentre=false;  
              //  Possible moves from Hand to Centre Stack              
                   for(let gp=PositionsEnum.STACK_1;gp<=PositionsEnum.STACK_4;gp++){
-                      if(SMUtils.isJoker(cards[pp]) || (SMUtils.diff(cards,pp,gp)==1)){
+                      if(cards[pp].length>0 && (SMUtils.isJoker(cards[pp]) || (SMUtils.diff(cards,pp,gp)==1))){
                         canMoveToCentre=true;
                         m=new AutoMove();
                         m.from=pp;
@@ -181,13 +189,13 @@ export class Player implements IPlayer{
                             m.nextMoves[i].previousMove=m; 
                         }
                                                 
-                        if(m.nextMoves.length==0){
-                            //can't find anymore moves so must discard.
-                            let discard = this.findBestDiscard(playerIdx,localCards);
-                            m.nextMoves=[discard];
-                            discard.previousMove=m;
-                            possibleMoves.push(discard);
-                        }                  
+                        // if(m.nextMoves.length==0){
+                        //     //can't find anymore moves so must discard.
+                        //     let discard = this.findBestDiscard(playerIdx,localCards);
+                        //     m.nextMoves=[discard];
+                        //     discard.previousMove=m;
+                        //     possibleMoves.push(discard);
+                        // }                  
                     }                    
                 }
              }       
@@ -195,6 +203,7 @@ export class Player implements IPlayer{
             
             //can't find moves so must discard.
             let discard = this.findBestDiscard(playerIdx,cards);
+            possibleMoves.push(discard);
             allMoves.push(discard);
         }
 
@@ -202,14 +211,17 @@ export class Player implements IPlayer{
     }
 
     private findBestDiscard(playerIdx:number,cards:ICardModel[][]):AutoMove{
-        const discards:AutoMove[]= this.findDiscardMoves(0,cards);
+        const discards:AutoMove[]= this.findDiscardMoves(playerIdx,cards);
 
+    //    console.log(`Player.findBestDiscard() discards.length: ${discards.length}`);
+        
         return Utils.getTopMove(discards);
     }
 
     private findDiscardMoves(playerIdx:number,cards:ICardModel[][]):AutoMove[]{
         let moves:AutoMove[]=[];
         let m:AutoMove;
+        const utils=Utils;
 
         //find all discard options
         for(let ph=(10*playerIdx)+PositionsEnum.PLAYER_HAND_1;ph<=(10*playerIdx)+PositionsEnum.PLAYER_HAND_5;ph++){
@@ -225,6 +237,7 @@ export class Player implements IPlayer{
                 }
             }
         }
+
         //score each move
         moves.forEach((m)=>{
             let score:number=0;

@@ -7,6 +7,7 @@ const move_enum_1 = require("./move-enum");
 class DiscardMoves {
     static findBestDiscard(playerIdx, cards) {
         const discards = DiscardMoves.findDiscardMoves(0, cards);
+        console.log(`Possible Discards: ${discards.length}`);
         return autoplay_utils_1.Utils.getTopMove(discards);
     }
     static findDiscardMoves(playerIdx, cards) {

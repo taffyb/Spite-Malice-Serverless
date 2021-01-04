@@ -31,16 +31,28 @@ class Utils {
         return possibleMoves;
     }
     static turn(move) {
-        let m = move;
+        let autoMove = move;
+        let m;
         let turn = [];
-        // console.log(`Move=>Turn ${m}`);
+        //       console.log(`Move=>Turn ${autoMove}`);
         //build an array of moves
+        m = new s_n_m_lib_1.Move();
+        m.from = autoMove.from;
+        m.to = autoMove.to;
+        m.card = autoMove.card;
+        m.isDiscard = autoMove.isDiscard;
         turn.push(m);
-        while (m.previousMove) {
-            turn.push(m.previousMove);
-            m = m.previousMove;
+        while (autoMove.previousMove) {
+            m = new s_n_m_lib_1.Move();
+            m.from = autoMove.previousMove.from;
+            m.to = autoMove.previousMove.to;
+            m.card = autoMove.previousMove.card;
+            m.isDiscard = autoMove.previousMove.isDiscard;
+            turn.push(m);
+            autoMove = autoMove.previousMove;
         }
         turn = turn.reverse();
+        //       console.log(`Move=>Turn ${JSON.stringify(turn,null, 2)}`);
         return turn;
     }
     static freePlayerStacks(cards, playerIdx) {
@@ -53,8 +65,8 @@ class Utils {
         return freePlayerStacks;
     }
     static applyMove(cards, move) {
-        cards[move.from].pop();
-        cards[move.to].push(new s_n_m_lib_1.Card(move.card, move.to));
+        let c = cards[move.from].pop();
+        cards[move.to].push(c);
         return cards;
     }
     static cardsInHand(cards, playerIdx) {
@@ -106,22 +118,24 @@ class Utils {
             sequenceValue = ((s_n_m_lib_1.SMUtils.toFaceNumber(cards[p][cards[p].length - (sequenceLength)].cardNo) - start) / (sequenceLength - 1));
         }
         // console.log(`{${sequenceLength},${sequenceValue}}`);
-        return { length: sequenceLength, value: sequenceValue };
+        return { length: sequenceLength, value: (Number.isNaN(sequenceValue) ? 0 : sequenceValue) };
     }
     static getTopMove(moves) {
         let topMoves = [];
         let topMoveIdx = 1;
         if (moves.length == 0) {
-            throw "NO MOVES";
+            console.trace;
+            throw new Error("NO MOVES");
         }
         else if (moves.length > 1) {
-            //sort moves by score
+            //sort moves by score (DEC)
             moves.sort((a, b) => { return b.score - a.score; });
             let topScore = moves[0].score;
             //collect all moves with the highest score
             for (let i = 0; i < moves.length; i++) {
                 let m = moves[i];
                 if (m.score == topScore) {
+                    //                   console.log(`Possible TopMove\n${m}`);
                     topMoves.push(m);
                 }
                 else {
@@ -152,6 +166,19 @@ class Utils {
             out += "\n";
         });
         return out;
+    }
+    static recycleCards(game, position) {
+        const moves = [];
+        for (let i = game.getCards(position).length - 1; i >= 0; i--) {
+            let c = game.getCards(position)[i];
+            let m = new s_n_m_lib_1.Move();
+            m.card = c.cardNo;
+            m.from = position;
+            m.to = s_n_m_lib_1.PositionsEnum.RECYCLE;
+            m.type = s_n_m_lib_1.MoveTypesEnum.RECYCLE;
+            moves.push(m);
+        }
+        return moves;
     }
 }
 exports.Utils = Utils;

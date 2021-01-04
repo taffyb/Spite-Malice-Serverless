@@ -11,7 +11,7 @@ class AutoMove extends s_n_m_lib_1.Move {
         // console.log(`${this.nextMoves.length}`);
         out = `[${s_n_m_lib_1.CardsEnum[s_n_m_lib_1.SMUtils.toFaceNumber(this.card)]}] ${this.from}=>${this.to} <${this.score}>`;
         if (this.previousMove) {
-            out += `\n${"\t".repeat(depth + 1)}${this.previousMove.toString(depth + 1)} `;
+            out += `\n${"\t".repeat(depth + 1)}${this.previousMove.toString(depth + 1)} ${this.isDiscard ? ' DISCARD' : ''}`;
         }
         return out;
     }

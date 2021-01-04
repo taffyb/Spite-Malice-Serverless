@@ -9,30 +9,39 @@ class Player {
         this.idx = idx;
         this.uuid = uuid;
     }
-    nextMoves(cards) {
-        let possibleMoves;
-        possibleMoves = this.findNextMoves(this.idx, cards, []);
+    nextTurn(cards) {
+        let possibleMoves = [];
+        this.findNextMoves(this.idx, cards, possibleMoves);
+        console.log(`POSSIBLE MOVES ${possibleMoves.length}`);
         if (possibleMoves) {
-            possibleMoves.forEach((m) => {
-                m.score = autoplay_utils_1.Utils.calculateOverallScore(m);
+            possibleMoves.forEach((m, i) => {
+                if (m) {
+                    m.score = autoplay_utils_1.Utils.calculateOverallScore(m);
+                }
+                else {
+                    possibleMoves.splice(i, 1);
+                }
             });
         }
         possibleMoves.sort((a, b) => { return a.score - b.score; });
         let topMove;
         let turn = [];
         if (possibleMoves.length > 1) {
-            // console.log(`POSSIBLE MOVES ${possibleMoves.length}`);
+            console.log(`Player.nextTurn multiple possible moves (${possibleMoves.length})`);
             topMove = autoplay_utils_1.Utils.getTopMove(possibleMoves);
-            // console.log(`TOP MOVE: ${topMove.toString()}`);
             turn = autoplay_utils_1.Utils.turn(topMove);
         }
-        else {
-            turn.push(possibleMoves[0]);
+        else if (possibleMoves.length == 1) {
+            turn = autoplay_utils_1.Utils.turn(possibleMoves[0]);
         }
+        else {
+            throw "NO POSSIBLE MOVE";
+        }
+        // console.log(`TURN length: ${turn.length}`);
         return turn;
     }
     findNextMoves(playerIdx, cards, possibleMoves, depth = 0) {
-        // console.log(`findNextMoves:${depth}`);
+        //    console.log(`Player.findNextMoves(depth=${depth})`);
         // depth+=1;
         let m;
         let moves = [];
@@ -83,7 +92,7 @@ class Player {
                         let canMoveToCentre = false;
                         //  Possible moves from Hand to Centre Stack              
                         for (let gp = s_n_m_lib_1.PositionsEnum.STACK_1; gp <= s_n_m_lib_1.PositionsEnum.STACK_4; gp++) {
-                            if (s_n_m_lib_1.SMUtils.isJoker(cards[pp]) || (s_n_m_lib_1.SMUtils.diff(cards, pp, gp) == 1)) {
+                            if (cards[pp].length > 0 && (s_n_m_lib_1.SMUtils.isJoker(cards[pp]) || (s_n_m_lib_1.SMUtils.diff(cards, pp, gp) == 1))) {
                                 canMoveToCentre = true;
                                 m = new auto_move_1.AutoMove();
                                 m.from = pp;
@@ -157,13 +166,13 @@ class Player {
                         for (let i = 0; i < m.nextMoves.length; i++) {
                             m.nextMoves[i].previousMove = m;
                         }
-                        if (m.nextMoves.length == 0) {
-                            //can't find anymore moves so must discard.
-                            let discard = this.findBestDiscard(playerIdx, localCards);
-                            m.nextMoves = [discard];
-                            discard.previousMove = m;
-                            possibleMoves.push(discard);
-                        }
+                        // if(m.nextMoves.length==0){
+                        //     //can't find anymore moves so must discard.
+                        //     let discard = this.findBestDiscard(playerIdx,localCards);
+                        //     m.nextMoves=[discard];
+                        //     discard.previousMove=m;
+                        //     possibleMoves.push(discard);
+                        // }                  
                     }
                 }
             }
@@ -171,17 +180,20 @@ class Player {
         else {
             //can't find moves so must discard.
             let discard = this.findBestDiscard(playerIdx, cards);
+            possibleMoves.push(discard);
             allMoves.push(discard);
         }
         return allMoves;
     }
     findBestDiscard(playerIdx, cards) {
-        const discards = this.findDiscardMoves(0, cards);
+        const discards = this.findDiscardMoves(playerIdx, cards);
+        //    console.log(`Player.findBestDiscard() discards.length: ${discards.length}`);
         return autoplay_utils_1.Utils.getTopMove(discards);
     }
     findDiscardMoves(playerIdx, cards) {
         let moves = [];
         let m;
+        const utils = autoplay_utils_1.Utils;
         //find all discard options
         for (let ph = (10 * playerIdx) + s_n_m_lib_1.PositionsEnum.PLAYER_HAND_1; ph <= (10 * playerIdx) + s_n_m_lib_1.PositionsEnum.PLAYER_HAND_5; ph++) {
             if (s_n_m_lib_1.SMUtils.getTopCard(cards[ph]) != s_n_m_lib_1.CardsEnum.NO_CARD) {

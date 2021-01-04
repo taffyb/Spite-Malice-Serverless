@@ -13,7 +13,7 @@ export class AutoMove extends Move{
     
     out = `[${CardsEnum[ SMUtils.toFaceNumber(this.card)]}] ${this.from}=>${this.to} <${this.score}>`;
     if(this.previousMove){
-        out += `\n${"\t".repeat(depth+1)}${this.previousMove.toString(depth+1)} `;
+        out += `\n${"\t".repeat(depth+1)}${this.previousMove.toString(depth+1)} ${this.isDiscard?' DISCARD':''}`;
     }
     return out;
   }

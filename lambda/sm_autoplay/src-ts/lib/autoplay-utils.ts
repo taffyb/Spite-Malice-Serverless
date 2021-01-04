@@ -1,5 +1,5 @@
 import { monitorEventLoopDelay } from "perf_hooks";
-import {  Card, CardsEnum, ICardModel, IMoveModel, PositionsEnum, SMUtils } from "s-n-m-lib";
+import {  Card,  Game, ICardModel, IMoveModel, Move, MoveTypesEnum, PositionsEnum, SMUtils } from "s-n-m-lib";
 import { AutoMove } from "./auto-move";
 
 export class Utils{
@@ -35,18 +35,31 @@ export class Utils{
         return possibleMoves;
     }
     static turn(move:AutoMove):IMoveModel[]{
-        let m:AutoMove = move;
+        let autoMove:AutoMove = move;
+        let m:IMoveModel;
         let turn:IMoveModel[]=[];
         
-        // console.log(`Move=>Turn ${m}`);
+ //       console.log(`Move=>Turn ${autoMove}`);
         
         //build an array of moves
+        m = new Move();
+        m.from= autoMove.from;
+        m.to= autoMove.to;
+        m.card= autoMove.card;
+        m.isDiscard= autoMove.isDiscard;
         turn.push(m);
-        while(m.previousMove){
-            turn.push(m.previousMove);
-            m=m.previousMove;
+        while(autoMove.previousMove){
+            m = new Move();
+            m.from= autoMove.previousMove.from;
+            m.to= autoMove.previousMove.to;
+            m.card= autoMove.previousMove.card;
+            m.isDiscard= autoMove.previousMove.isDiscard;
+            turn.push(m);
+            autoMove=autoMove.previousMove;
         }
         turn = turn.reverse();
+        
+ //       console.log(`Move=>Turn ${JSON.stringify(turn,null, 2)}`);
         return turn;
     }
     static freePlayerStacks(cards:ICardModel[][],playerIdx:number):number{
@@ -60,9 +73,9 @@ export class Utils{
         return freePlayerStacks;
     }
     static applyMove(cards:ICardModel[][],move:IMoveModel):ICardModel[][]{
-        cards[move.from].pop();
-        cards[move.to].push(new Card(move.card,move.to));
-
+        
+        let c:ICardModel = cards[move.from].pop();
+        cards[move.to].push(c);
         return cards;
     }
     static cardsInHand(cards:ICardModel[][],playerIdx:number):number{
@@ -118,7 +131,7 @@ export class Utils{
             sequenceValue=((SMUtils.toFaceNumber(cards[p][cards[p].length-(sequenceLength)].cardNo)-start)/(sequenceLength-1));
         }
         // console.log(`{${sequenceLength},${sequenceValue}}`);
-        return {length:sequenceLength,value:sequenceValue};
+        return {length:sequenceLength,value:(Number.isNaN(sequenceValue)?0:sequenceValue)};
     }
 
     static getTopMove(moves:AutoMove[]):AutoMove{
@@ -126,15 +139,18 @@ export class Utils{
         let topMoveIdx:number=1;
 
         if(moves.length==0){
-            throw "NO MOVES";
+            console.trace;
+            throw new Error("NO MOVES");
         }else if(moves.length>1){
-            //sort moves by score
+            //sort moves by score (DEC)
             moves.sort((a:AutoMove,b:AutoMove)=>{return b.score-a.score});
             let topScore = moves[0].score
             //collect all moves with the highest score
             for( let i=0;i<moves.length;i++){
                 let m:AutoMove = moves[i];
                 if(m.score==topScore){
+ //                   console.log(`Possible TopMove\n${m}`);
+                    
                     topMoves.push(m);
                 }else{
                     break;
@@ -166,5 +182,19 @@ export class Utils{
             out+="\n";
         });
         return out;
+    }
+    
+    static recycleCards(game: Game, position: number):IMoveModel[]{
+        const moves:IMoveModel[]=[];
+        for(let i = game.getCards(position).length-1; i>=0; i--){
+            let c = game.getCards(position)[i];
+            let m = new Move();
+            m.card = c.cardNo;
+            m.from = position;
+            m.to = PositionsEnum.RECYCLE;
+            m.type = MoveTypesEnum.RECYCLE;
+            moves.push(m);
+        }
+        return moves;
     }
 }
