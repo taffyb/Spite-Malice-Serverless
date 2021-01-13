@@ -68,3 +68,6 @@ typings/
 
 *.js
 *.map
+*.txt
+lambda/sm_autoplay/built
+lambda/sm_gameHarness/built

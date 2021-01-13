@@ -1,5 +1,6 @@
-import { monitorEventLoopDelay } from "perf_hooks";
-import {  Card,  Game, ICardModel, IMoveModel, Move, MoveTypesEnum, PositionsEnum, SMUtils } from "s-n-m-lib";
+import { string0To255 } from 'aws-sdk/clients/customerprofiles';
+import { appendFileSync, readFileSync } from 'fs';
+import {  Card,   ICardModel, IGameModel, IMoveModel, Move, MoveTypesEnum, PositionsEnum, SMUtils } from "s-n-m-lib";
 import { AutoMove } from "./auto-move";
 
 export class Utils{
@@ -111,29 +112,35 @@ export class Utils{
 
         return cards;
     }
-    static getSequence(cards:ICardModel[][],p:number, playerIdx:number=0):{length:number,value:number}{
+    /**
+     * getSequence
+     * 
+     * @param cards - array of cards
+     * @returns {length:number,value:number}
+     * length is the number of cards in a ascending order eg. [13,12,10] = 4
+     * value is an indication of how sparce the sequence is [13,12,11,10] =1 ; [13,12,10]=.75 (3/4)
+    */
+    static getSequence(cards:ICardModel[]):{length:number,value:number}{
         let sequenceLength:number=1;
         let sequenceValue:number=0;
 
-        if(cards[p].length>1){
-            const start=SMUtils.toFaceNumber(cards[p][cards[p].length-1].cardNo);
-            const topOfPile:number = SMUtils.getTopCard(cards[PositionsEnum.PLAYER_PILE+(10*playerIdx)]);
-            let c:number = start;
-            for(let i=cards[p].length-2;i>=0;i--){
-                let nextCard = SMUtils.toFaceNumber(cards[p][i].cardNo)
-                if(nextCard>c){
+        if(cards.length>1){
+            const end=SMUtils.toFaceNumber(cards[cards.length-1].cardNo);
+            let lastCard:number = end;
+            for(let i=cards.length-2;i>=0;i--){
+                let nextCard = SMUtils.toFaceNumber(cards[i].cardNo)
+                if(nextCard>lastCard){
                     sequenceLength++;
-                    c=nextCard;
+                    lastCard=nextCard;
                 }else{
                     break;
                 }
             }
-            sequenceValue=((SMUtils.toFaceNumber(cards[p][cards[p].length-(sequenceLength)].cardNo)-start)/(sequenceLength-1));
+            sequenceValue=((sequenceLength)/(lastCard-end+1));
         }
         // console.log(`{${sequenceLength},${sequenceValue}}`);
         return {length:sequenceLength,value:(Number.isNaN(sequenceValue)?0:sequenceValue)};
     }
-
     static getTopMove(moves:AutoMove[]):AutoMove{
         let topMoves:AutoMove[]=[];
         let topMoveIdx:number=1;
@@ -168,9 +175,10 @@ export class Utils{
         let out:string="";
 
         cards.forEach((pos:ICardModel[],posIdx:number)=>{
-            out+="[";
+           
+            out+=`[`;
             pos.forEach((c:ICardModel,cIdx:number)=>{
-                out+=c.cardNo;
+                out+=SMUtils.toFaceNumber( c.cardNo);
                 if(cIdx!=pos.length-1){
                     out+=",";
                 }
@@ -182,12 +190,11 @@ export class Utils{
             out+="\n";
         });
         return out;
-    }
-    
-    static recycleCards(game: Game, position: number):IMoveModel[]{
+    }    
+    static recycleCards(game: IGameModel, position: number):IMoveModel[]{
         const moves:IMoveModel[]=[];
-        for(let i = game.getCards(position).length-1; i>=0; i--){
-            let c = game.getCards(position)[i];
+        for(let i = game.cards[position].length-1; i>=0; i--){
+            let c = game.cards[position][i];
             let m = new Move();
             m.card = c.cardNo;
             m.from = position;
@@ -196,5 +203,45 @@ export class Utils{
             moves.push(m);
         }
         return moves;
+    }
+    static cardsInPlay(cards:ICardModel[][]):number{
+        let cardsInPlay=0;
+        cards.forEach((m:ICardModel[])=>{
+            cardsInPlay+=m.length;
+        });
+        return cardsInPlay;
+    }
+    static log(filename:string,s:string){
+        
+        const file= appendFileSync(`./output/${filename}.txt`, s+'\n');
+    }
+    static addCard(cards:ICardModel[][],m:IMoveModel){
+        let c= new Card(m.card,m.to);
+        cards[m.to].push(c);
+
+    }
+    static cardsFromFile(filename:string):ICardModel[][]{
+        let cards:ICardModel[][]=[];
+        let cardsTemp:number[][]=[];
+        let file:string=readFileSync(filename).toString();
+        cardsTemp = JSON.parse(file);
+
+        cardsTemp.forEach((pos:number[],i:number)=>{
+            cards.push([]);
+            pos.forEach((c:number)=>{
+                cards[i].push(new Card(c,i));
+            });
+        });
+        return cards;
+    }
+    static movesFromFile(filename:string):IMoveModel[]{
+        let moves:IMoveModel[]=[];
+        let file:string=readFileSync(filename).toString();
+        moves = JSON.parse(file);
+        return moves;
+    }
+    static undoMove(m:IMoveModel, cards:Card[][]){
+        let card:ICardModel = cards[m.to].pop();
+        cards[m.from].push(card);
     }
 }

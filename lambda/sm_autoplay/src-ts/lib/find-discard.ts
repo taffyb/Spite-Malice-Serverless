@@ -35,7 +35,7 @@ import { MoveScoresEnum } from "./move-enum";
             let score:number=0;
             let diffFromTo:number=SMUtils.diff(cards,m.from,m.to);
             let diffFromPile:number=SMUtils.diff(cards,m.from,PositionsEnum.PLAYER_PILE+(10*playerIdx));
-            let sequence = Utils.getSequence(cards,m.to,playerIdx);
+            let sequence = Utils.getSequence(cards[m.to+(10*playerIdx)]);
 
             if(diffFromTo==0){
                 score+=(MoveScoresEnum.DISCARD_IN_SEQUENCE);

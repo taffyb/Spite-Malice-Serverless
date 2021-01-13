@@ -9,5 +9,6 @@ export enum MoveScoresEnum {
     DISCARD_OUT_OF_SEQUENCE = 0,
     DISCARD_SAME_CARD = 5,
     DISCARD_BLOCK_SEQUENCE = -4,
+    DISCARD_JOKER = -100,
     REFRESH_HAND =500
 }
