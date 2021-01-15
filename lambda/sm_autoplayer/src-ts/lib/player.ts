@@ -33,19 +33,12 @@ export class Player implements IPlayer{
         let topMove:AutoMove;
         let turn:IMoveModel[]=[];
         if(possibleMoves.length>1){
-            
- //          console.log(`Player.nextTurn multiple possible moves (${possibleMoves.length})`);
             topMove=Utils.getTopMove(possibleMoves);
             
             turn=Utils.turn(topMove);
         }else if(possibleMoves.length==1){
             turn=Utils.turn(possibleMoves[0]);
         }
-        // else{
-
-        //     throw "NO POSSIBLE MOVE"
-        // }
-        // console.log(`TURN length: ${turn.length}`);
 
         return turn;
     }
@@ -56,15 +49,15 @@ export class Player implements IPlayer{
         if((used.heapUsed/used.heapTotal)>=MAX_HEAP_PERCENT){
             console.log(`${JSON.stringify(used)}`);
             
-            console.log(`>${MAX_HEAP_PERCENT*100}% Heap used Possible Moves:${possibleMoves.length} depth:${depth}`);
+            console.log(`>${MAX_HEAP_PERCENT*100}% Heap used Possible Moves:${possibleMoves.length} depth:${depth} current player: ${playerIdx}`);
             throw new Error("TOO MANY POSSIBLE MOVES");
         }
         
-        // depth+=1;
         let m:AutoMove;
         let moves:AutoMove[]=[];
         let allMoves:AutoMove[]=[];
         let bail=false;
+        let cardsInHand:number[]=[];
     
         for(let pp:number=PositionsEnum.PLAYER_PILE+(10*playerIdx);pp<=PositionsEnum.PLAYER_STACK_4+(10*playerIdx);pp++){
             if(bail){break;}
@@ -96,8 +89,8 @@ export class Player implements IPlayer{
                             m.isDiscard=false;
     
                             moves.push(m);
-                            bail=true;
-                            break; // no point looking at other options
+                            bail=true; // no point looking at other options
+                            break; 
                         }
                     }
                 }
@@ -111,31 +104,37 @@ export class Player implements IPlayer{
             case PositionsEnum.PLAYER_HAND_4+(10*playerIdx):
             case PositionsEnum.PLAYER_HAND_5+(10*playerIdx):
                 if(cards[pp].length>0 && cards[pp]!=undefined){  
-                  
-                    let canMoveToCentre=false;  
-                    //  Possible moves from Hand to Centre Stack              
-                    for(let gp=PositionsEnum.STACK_1;gp<=PositionsEnum.STACK_4;gp++){
-                        if(cards[pp].length>0 && (SMUtils.isJoker(cards[pp]) || (SMUtils.diff(cards,pp,gp)==1))){
-                            canMoveToCentre=true;
-                            m=new AutoMove();
-                            m.from=pp;
-                            m.card=cards[pp][0].cardNo;
-                            m.to=gp;
-                            m.score=(MoveScoresEnum.PLAY_FROM_HAND+MoveScoresEnum.ADD_TO_CENTER_STACK); 
+                    // if we have seen this card in the hand before there is no point reevaluating as it will only produce the same sequence as before.
+                    if(!cardsInHand.includes( SMUtils.toFaceNumber(cards[pp][0].cardNo))){
+                        cardsInHand.push( SMUtils.toFaceNumber(cards[pp][0].cardNo));
+                        let canMoveToCentre=false;  
+                        //  Possible moves from Hand to Centre Stack              
+                        for(let gp=PositionsEnum.STACK_1;gp<=PositionsEnum.STACK_4;gp++){
+                            if(!canMoveToCentre && (cards[pp].length>0 && (SMUtils.isJoker(cards[pp]) || (SMUtils.diff(cards,pp,gp)==1)))){
+                                canMoveToCentre=true;
+                                m=new AutoMove();
+                                m.from=pp;
+                                m.card=cards[pp][0].cardNo;
+                                m.to=gp;
+                                m.score=(MoveScoresEnum.PLAY_FROM_HAND+MoveScoresEnum.ADD_TO_CENTER_STACK); 
+                                if(SMUtils.toFaceNumber(m.card)==CardsEnum.JOKER){
+                                    m.score+=MoveScoresEnum.PLAY_JOKER;
+                                }
 
-                            moves.push(m);
+                                moves.push(m);
+                            }
                         }
-                    }
-                  
-                    //Posible moves from Hand to Player Stack (an open space)              
-                    for(let ps=PositionsEnum.PLAYER_STACK_1+(10*playerIdx);ps<=PositionsEnum.PLAYER_STACK_4+(10*playerIdx);ps++){
-                        if(cards[ps].length==0 && !canMoveToCentre){ //move to center in one step.
-                            m=new AutoMove();
-                            m.from=pp;
-                            m.card=cards[pp][0].cardNo;
-                            m.to=ps;
-                            m.score=(MoveScoresEnum.OPEN_A_SPACE+SMUtils.toFaceNumber(SMUtils.getTopCard(cards[ps])));
-                            moves.push(m);
+                    
+                        //Posible moves from Hand to Player Stack (an open space)              
+                        for(let ps=PositionsEnum.PLAYER_STACK_1+(10*playerIdx);ps<=PositionsEnum.PLAYER_STACK_4+(10*playerIdx);ps++){
+                            if(cards[ps].length==0 && !canMoveToCentre){ //move to center in one step.
+                                m=new AutoMove();
+                                m.from=pp;
+                                m.card=cards[pp][0].cardNo;
+                                m.to=ps;
+                                m.score=(MoveScoresEnum.OPEN_A_SPACE+SMUtils.toFaceNumber(SMUtils.getTopCard(cards[ps])));
+                                moves.push(m);
+                            }
                         }
                     }
                 }
@@ -147,18 +146,23 @@ export class Player implements IPlayer{
             case PositionsEnum.PLAYER_STACK_3+(10*playerIdx):
             case PositionsEnum.PLAYER_STACK_4+(10*playerIdx):
                 
+                let canMoveToCentre=false;  
          //    Posible moves from Player Stack to Centre Stack                
                 for(let gp=PositionsEnum.STACK_1;gp<=PositionsEnum.STACK_4;gp++){
-                    if(SMUtils.isJoker(cards[pp]) || SMUtils.diff(cards, pp, gp)==1){
-                      m=new AutoMove();
-                      m.from=pp;
-                      m.card=SMUtils.getTopCard(cards[pp]);
-                      m.to=gp;
-                      m.score=(MoveScoresEnum.PLAY_FROM_STACK+MoveScoresEnum.ADD_TO_CENTER_STACK);
-                      if(cards[pp].length==1){
-                          m.score+=MoveScoresEnum.OPEN_A_SPACE;
-                      }
-                      moves.push(m);
+                    if(!canMoveToCentre && (SMUtils.isJoker(cards[pp]) || SMUtils.diff(cards, pp, gp)==1)){
+                        canMoveToCentre=true;
+                        m=new AutoMove();
+                        m.from=pp;
+                        m.card=SMUtils.getTopCard(cards[pp]);
+                        m.to=gp;
+                        m.score=(MoveScoresEnum.PLAY_FROM_STACK+MoveScoresEnum.ADD_TO_CENTER_STACK);
+                        if(cards[pp].length==1){
+                            m.score+=MoveScoresEnum.OPEN_A_SPACE;
+                        }
+                        if(SMUtils.toFaceNumber(m.card)==CardsEnum.JOKER){
+                            m.score+=MoveScoresEnum.PLAY_JOKER;
+                        }
+                        moves.push(m);
                     }
                 }
                 allMoves.push(...moves);
@@ -239,6 +243,10 @@ export class Player implements IPlayer{
             let diffFromPile:number=SMUtils.diff(cards,m.from,PositionsEnum.PLAYER_PILE+(10*playerIdx));
             let sequence = Utils.getSequence(cards[m.to]);
 
+            //Avoid placing any other card on top of a Joker.
+            if(SMUtils.toFaceNumber(cards[m.to][cards[m.to].length-1].cardNo)==CardsEnum.JOKER){
+                score+=MoveScoresEnum.DISCARD_ON_JOKER;
+            }
             if(diffFromTo>0){
                 score+=(MoveScoresEnum.DISCARD_BLOCK_SEQUENCE);
                 if(sequence.length>0){
@@ -257,7 +265,6 @@ export class Player implements IPlayer{
                 score+= MoveScoresEnum.DISCARD_JOKER;
             }
             // and if necessary don't put them on a sequence because that defines the value.
-            //Avoid placing any other card on top of a Joker.
             //Look at the GAME_STACKS
             //Look at the opponent's PILE & STACKS
 

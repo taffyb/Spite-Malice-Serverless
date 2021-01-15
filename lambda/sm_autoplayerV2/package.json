@@ -1,10 +1,11 @@
 {
-  "name": "sm_gameharness",
+  "name": "sm_get_player",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "compile": "tsc"
   },
   "author": "",
   "license": "ISC",

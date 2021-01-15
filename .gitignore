@@ -69,5 +69,5 @@ typings/
 *.js
 *.map
 *.txt
-lambda/sm_autoplay/built
+lambda/sm_autoplayer/built
 lambda/sm_gameHarness/built
