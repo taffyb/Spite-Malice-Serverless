@@ -2,8 +2,6 @@ import { CardsEnum, ICardModel, IMoveModel, MoveTypesEnum, PositionsEnum, SMUtil
 import { MoveScoresEnum} from './move-enum';
 import { AutoMove} from './auto-move';
 import { Utils } from './autoplay-utils';
-import { monitorEventLoopDelay } from 'perf_hooks';
-import { truncate } from 'fs-extra';
 
 export interface IPlayer{
     uuid:string;
@@ -17,7 +15,7 @@ export class PlayerV2 implements IPlayer{
         this.uuid=uuid;
     }
     nextTurn(cards: ICardModel[][]): IMoveModel[] {
-        const cardsN:number[][]=Utils.cards2cardsN(cards);
+        const cardsN:number[][]=SMUtils.cardArr2IntArr(cards);
         this.possibleMoves=[];
         let bestMove:AutoMove;
         let turn:IMoveModel[]=[];

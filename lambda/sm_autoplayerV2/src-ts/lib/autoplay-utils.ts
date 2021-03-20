@@ -112,18 +112,18 @@ export class Utils{
         }
         return cardsInHand;
     }
-    static intArr2CardArr(inArr:number[][]):ICardModel[][]{
+    // static intArr2CardArr(inArr:number[][]):ICardModel[][]{
         
-        const cards:ICardModel[][]=[];
+    //     const cards:ICardModel[][]=[];
 
-        for(let pos:number=PositionsEnum.PLAYER_PILE;pos<=PositionsEnum.RECYCLE;pos++){
-            cards.push([]);
-            for(let c:number=0;c<inArr[pos].length;c++){
-                cards[pos].push(new Card(inArr[pos][c],pos));
-            }
-        }
-        return cards;
-    }
+    //     for(let pos:number=PositionsEnum.PLAYER_PILE;pos<=PositionsEnum.RECYCLE;pos++){
+    //         cards.push([]);
+    //         for(let c:number=0;c<inArr[pos].length;c++){
+    //             cards[pos].push(new Card(inArr[pos][c],pos));
+    //         }
+    //     }
+    //     return cards;
+    // }
     /**
      * getSequence
      * 
@@ -345,17 +345,17 @@ export class Utils{
      * @param cards ICardModel[][]
      * @returns number[][]
      */
-    static cards2cardsN(cards:ICardModel[][]):number[][]{
-        const cardsN:number[][]=[];
-        cards.forEach((pos:ICardModel[], i)=>{
-            cardsN.push([]);
-            pos.forEach((c)=>{
-                cardsN[i].push(c.cardNo);
-            });
-        });
+    // static cards2cardsN(cards:ICardModel[][]):number[][]{
+    //     const cardsN:number[][]=[];
+    //     cards.forEach((pos:ICardModel[], i)=>{
+    //         cardsN.push([]);
+    //         pos.forEach((c)=>{
+    //             cardsN[i].push(c.cardNo);
+    //         });
+    //     });
 
-        return cardsN;
-    }
+    //     return cardsN;
+    // }
     static flattenHand(cards:number[][],playerIdx:number):number[]{
         let flattenHand:number[]=[];
         for(let i:number=PositionsEnum.PLAYER_HAND_1+(playerIdx*10);i<=PositionsEnum.PLAYER_STACK_4+(playerIdx*10);i++){

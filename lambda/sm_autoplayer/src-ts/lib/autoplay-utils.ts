@@ -88,30 +88,6 @@ export class Utils{
         }
         return cardsInHand;
     }
-    static intArr2CardArr(inArr:number[][]):ICardModel[][]{
-        
-        const cards:ICardModel[][]=[];
-
-        for(let pos:number=PositionsEnum.PLAYER_PILE;pos<=PositionsEnum.RECYCLE;pos++){
-            cards.push([]);
-            for(let c:number=0;c<inArr[pos].length;c++){
-                cards[pos].push(new Card(inArr[pos][c],pos));
-            }
-        }
-        return cards;
-    }
-    static cardArr2IntArr(inArr:ICardModel[][]):number[][]{
-        const cards:number[][]=[];
-
-        for(let pos:number=PositionsEnum.PLAYER_PILE;pos<=PositionsEnum.RECYCLE;pos++){
-            cards.push([]);
-            for(let c:number=0;c<inArr[pos].length;c++){
-                cards[pos].push(inArr[pos][c].cardNo);
-            }
-        }
-
-        return cards;
-    }
     /**
      * getSequence
      * 
