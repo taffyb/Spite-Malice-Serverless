@@ -77,6 +77,8 @@ export class Player implements IPlayer{
                         m.isDiscard=false;
                         
                         moves.push(m);
+                        bail=true; // no point looking at other options
+                        break; 
                     }else{
                         //If the card on the player's PILE is 1 greater than the STACK then Move.
                         if(SMUtils.diff(cards,pp,gp)==1){
@@ -122,6 +124,7 @@ export class Player implements IPlayer{
                                 }
 
                                 moves.push(m);
+                                break; // one game stack is the same as any other
                             }
                         }
                     
@@ -134,6 +137,7 @@ export class Player implements IPlayer{
                                 m.to=ps;
                                 m.score=(MoveScoresEnum.OPEN_A_SPACE+SMUtils.toFaceNumber(SMUtils.getTopCard(cards[ps])));
                                 moves.push(m);
+                                break; //one open stack is the same as any other
                             }
                         }
                     }
@@ -163,6 +167,7 @@ export class Player implements IPlayer{
                             m.score+=MoveScoresEnum.PLAY_JOKER;
                         }
                         moves.push(m);
+                        break; // one game stack is the same as any other
                     }
                 }
                 allMoves.push(...moves);
@@ -179,7 +184,7 @@ export class Player implements IPlayer{
                 let localCards:ICardModel[][]=JSON.parse(JSON.stringify(cards));
             
                 if(m.from == PositionsEnum.PLAYER_PILE+(10*playerIdx)){
-                    //If this is a move from the PILE we can't look further as we don't know what the next card is.
+                    //If this is a move from the PILE we can't look further as we don't know what the next card will be.
                     possibleMoves.push(m);
                 }else{
                     localCards = Utils.applyMove(localCards,m);
@@ -203,6 +208,7 @@ export class Player implements IPlayer{
         }else{
             if(Utils.cardsInHand(cards,playerIdx)>0){
                 //can't find moves so must discard.
+                
                 let discard = this.findBestDiscard(playerIdx,cards);
                 possibleMoves.push(discard);
                 allMoves.push(discard);
@@ -260,13 +266,10 @@ export class Player implements IPlayer{
             }else{
                 score+=(MoveScoresEnum.DISCARD_BLOCK_SEQUENCE * sequence.value);
             }
-            //Avoid Moving JOKERS out of Hand
+            //discourage Moving JOKERS out of Hand
             if(SMUtils.toFaceNumber( m.card)==CardsEnum.JOKER){
                 score+= MoveScoresEnum.DISCARD_JOKER;
             }
-            // and if necessary don't put them on a sequence because that defines the value.
-            //Look at the GAME_STACKS
-            //Look at the opponent's PILE & STACKS
 
             m.score=score;
         });

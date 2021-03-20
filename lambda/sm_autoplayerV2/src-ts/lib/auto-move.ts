@@ -4,6 +4,7 @@ export class AutoMove extends Move{
   score:number;
   nextMoves:AutoMove[]=[];
   previousMove:AutoMove;
+  length:number=1;
 
   toString(depth:number=0):string{
     let out:string="";

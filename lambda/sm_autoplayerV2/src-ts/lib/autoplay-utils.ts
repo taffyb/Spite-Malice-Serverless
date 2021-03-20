@@ -5,6 +5,14 @@ import {  Card,   ICardModel, IGameModel, IMoveModel, Move, MoveTypesEnum, Posit
 import { AutoMove } from "./auto-move";
 
 export class Utils{
+    static cardOnStack(cards: number[][], arg1: number):boolean {
+        for(let gp:number=PositionsEnum.STACK_1;gp<=PositionsEnum.STACK_4;gp++){
+            if(SMUtils.toFaceNumber(SMUtils.getFaceNumberN(cards[gp]))){
+                return true;
+            }
+        }
+        return false;
+    }
     
     static calculateOverallScore(finalMove:AutoMove):number{
         let move:AutoMove=finalMove;
@@ -184,10 +192,13 @@ export class Utils{
         }else if(moves.length>1){
             //sort moves by score (DEC)
             moves.sort((a:AutoMove,b:AutoMove)=>{return b.score-a.score});
+            
             let topScore = moves[0].score
             //collect all moves with the highest score
+ //           moves.forEach((m,i)=>{console.log(`Move[${i}] ${Utils.moveToString(m)} ${m.isDiscard?'DISCARD':''}`);});
             for( let i=0;i<moves.length;i++){
                 let m:AutoMove = moves[i];
+                
                 if(m.score==topScore){
  //                   console.log(`Possible TopMove\n${m}`);
                     
@@ -204,6 +215,38 @@ export class Utils{
         
         return topMoves[topMoveIdx-1];
     }
+    static closestStackToPile(cards:number[][],playerIdx:number):number{
+        let shortestDistanceToPile:number=13;
+        let closestStackToPile:number=PositionsEnum.STACK_1;
+        let playerPile:number[] = cards[PositionsEnum.PLAYER_PILE+(10*playerIdx)];
+        let pileCard:number=SMUtils.toFaceNumber(playerPile[playerPile.length-1]);
+
+        for(let s:number=PositionsEnum.STACK_1;s<=PositionsEnum.STACK_4;s++){
+            let distance:number=0;
+            if(cards[s].length==0){
+                let stackCard:number=SMUtils.getFaceNumberN(cards[s]);
+                if(pileCard>stackCard){
+                    distance= pileCard-stackCard;
+                }else{
+                    distance = 13-stackCard+pileCard;
+                }
+            }else{
+                distance=pileCard;
+            }
+            if(distance <shortestDistanceToPile){
+                shortestDistanceToPile=distance;
+                closestStackToPile=s;
+            }
+        }
+
+        return closestStackToPile;
+    }
+    static moveToString(move: AutoMove):string {
+        let out:string="";
+        const m:AutoMove=move;
+        out += `<${SMUtils.toFaceNumber(m.card)}> ${m.from}=>${m.to} (${m.score})`;
+        return out;
+    }
     static cardsToString(cards:ICardModel[][]):string{
         let out:string="";
 
@@ -212,6 +255,26 @@ export class Utils{
             out+=`[`;
             pos.forEach((c:ICardModel,cIdx:number)=>{
                 out+=SMUtils.toFaceNumber( c.cardNo);
+                if(cIdx!=pos.length-1){
+                    out+=",";
+                }
+            });
+            out+="]";
+            if(posIdx!=cards.length-1){
+                out+=",";
+            }
+            out+="\n";
+        });
+        return out;
+    }    
+    static cardsNToString(cards:number[][]):string{
+        let out:string="";
+
+        cards.forEach((pos:number[],posIdx:number)=>{
+           
+            out+=`[`;
+            pos.forEach((c:number,cIdx:number)=>{
+                out+=SMUtils.toFaceNumber( c);
                 if(cIdx!=pos.length-1){
                     out+=",";
                 }
@@ -292,5 +355,14 @@ export class Utils{
         });
 
         return cardsN;
+    }
+    static flattenHand(cards:number[][],playerIdx:number):number[]{
+        let flattenHand:number[]=[];
+        for(let i:number=PositionsEnum.PLAYER_HAND_1+(playerIdx*10);i<=PositionsEnum.PLAYER_STACK_4+(playerIdx*10);i++){
+            cards[i].forEach((c:number)=>{
+                flattenHand.push(SMUtils.toFaceNumber(c));
+            });
+        }
+        return flattenHand;
     }
 }

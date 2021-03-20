@@ -11,10 +11,11 @@ export class GameHarness{
     game:Game;
 
     //stats
+    turns:{playerIdx:number,moves:number,duration:number}[]=[];
     turnId:number=1;
     moveId:number=0;
     cardsToHand:number=0;
-    duration:number;
+    duration:{total:number,playerDuration:number[]}={total:0,playerDuration:[0,0]};
     firstPlayer:string;
 
     constructor(playerUuids:string[],private debug:boolean=false){
@@ -27,8 +28,7 @@ export class GameHarness{
         stats={
             gameUuid:this.game.uuid,
             firstPlayer:this.firstPlayer,
-            turns:this.turnId,
-            moves:this.moveId,
+            turns:this.turns,
             duration:this.duration,
             cards:Utils.cardsToString(this.game.cards),
             winner:this.players[this.game.activePlayer].uuid
@@ -37,7 +37,6 @@ export class GameHarness{
     }
 
     play():GameStatesEnum{
-        this.duration=Date.now();
         let message:string="";
         this.firstPlayer= this.players[this.game.activePlayer].uuid
         if(this.debug){
@@ -47,7 +46,6 @@ export class GameHarness{
         }
         //save game state
         while(![GameStatesEnum.GAME_OVER,GameStatesEnum.DRAW].includes(this.game.state)){ 
-            
             if(this.debug){
                 message=`${this.players[this.game.activePlayer].uuid} TURN ${this.turnId} <${this.cardsToHand}> Remaining Cards: ${this.game.cards[PositionsEnum.DECK].length} / ${this.game.cards[PositionsEnum.RECYCLE].length} `;
                 Utils.log(this.game.uuid,message); 
@@ -58,8 +56,11 @@ export class GameHarness{
             let turnMoves:IMoveModel[]=[];
 
             //find next moves
-            while((turnMoves.length==0 || (!turnMoves[turnMoves.length-1].isDiscard)) && this.game.state == GameStatesEnum.PLAYING){                
-                turnMoves=this.players[this.game.activePlayer].nextTurn(this.game.cards);              
+            while((turnMoves.length==0 || (!turnMoves[turnMoves.length-1].isDiscard)) && this.game.state == GameStatesEnum.PLAYING){   
+                
+                let startTime =Date.now();             
+                turnMoves=this.players[this.game.activePlayer].nextTurn(this.game.cards);   
+                this.turns.push({playerIdx:this.game.activePlayer,moves:turnMoves.length,duration:Date.now()-startTime});           
                 
                 if(this.debug){
                     message=`\t==> Moves:${turnMoves.length} ${this.formatHand(this.game.cards,this.game.activePlayer)} : ${Utils.cardsInPlay(this.game.cards)}`;
@@ -80,20 +81,21 @@ export class GameHarness{
                         console.log(message);
                     }
                     Utils.applyMove(this.game.cards,m);
-
-                    if(SMUtils.getFaceNumber(this.game.cards[m.to])==CardsEnum.KING && (m.to>=PositionsEnum.STACK_1 && m.to<=PositionsEnum.STACK_4)){
-                        const recycleMoves = Utils.recycleCards(this.game,m.to);                        
-                        recycleMoves.forEach((m)=>{
-                            m.type=MoveTypesEnum.RECYCLE;
-                            m.gameUuid=this.game.uuid;
-                            m.id=this.moveId++;
-                            Utils.log(this.game.uuid,JSON.stringify(m));
-                            Utils.applyMove(this.game.cards,m);                           
-                        });
-                        if(this.debug){
-                            message=`\t** RECYCLE STACK ** ${PositionsEnum[m.to]}`;
-                            Utils.log(this.game.uuid,message);
-                            console.log(message);
+                    if(this.game.cards[PositionsEnum.PLAYER_PILE+(10*this.game.activePlayer)].length>0){
+                        if(SMUtils.getFaceNumber(this.game.cards[m.to])==CardsEnum.KING && (m.to>=PositionsEnum.STACK_1 && m.to<=PositionsEnum.STACK_4)){
+                            const recycleMoves = Utils.recycleCards(this.game,m.to);                        
+                            recycleMoves.forEach((m)=>{
+                                m.type=MoveTypesEnum.RECYCLE;
+                                m.gameUuid=this.game.uuid;
+                                m.id=this.moveId++;
+                                Utils.log(this.game.uuid,JSON.stringify(m));
+                                Utils.applyMove(this.game.cards,m);                           
+                            });
+                            if(this.debug){
+                                message=`\t** RECYCLE STACK ** ${PositionsEnum[m.to]}`;
+                                Utils.log(this.game.uuid,message);
+                                console.log(message);
+                            }
                         }
                     }
                 });
@@ -130,6 +132,7 @@ export class GameHarness{
                         console.log(message);
                     }
                 }
+                this.duration.playerDuration[this.game.activePlayer]+=(Date.now()-startTime);
             }
             //save moves/game state
             if(![GameStatesEnum.GAME_OVER,GameStatesEnum.DRAW].includes(this.game.state)){
@@ -151,7 +154,7 @@ export class GameHarness{
             }
         }
         
-        this.duration = Date.now()-this.duration;
+        this.duration.total=this.duration.playerDuration[0]+this.duration.playerDuration[1];
         return this.game.state;
     }
 
@@ -182,6 +185,7 @@ export class GameHarness{
 }
 
 let args:string[] = process.argv.slice(2);
+let csvOut:boolean=false;
 let gameCount:number=0;
 let games:number=1;
 let cardsFilename:string;
@@ -196,6 +200,9 @@ console.log(`${process.argv}`);
 for(let i:number=0;i<args.length;i++){
     let arg:string[]=args[i].split("=");
     switch(arg[0]){
+        case "CSV":
+            csvOut=(arg[1]==="true");
+            break;
         case "games":
             games=parseInt(arg[1]);
             break;
@@ -226,7 +233,7 @@ function waitForHeap(){
     if(gameCount<games){
         gameCount++;
         
-        let harness = new GameHarness(["11111","22222"],debug);
+        let harness = new GameHarness(["Player1","Player2"],debug);
         if(activePlayer !== undefined){
             harness.game.activePlayer= activePlayer;
         }
@@ -244,11 +251,25 @@ function waitForHeap(){
         try{
             harness.play();
             let stats=harness.stats();
-            console.log(`[${gameCount} of ${games}] ${stats.gameUuid}: Turns:${stats.turns} Moves:${stats.moves} Duration:${stats.duration/1000} First Player:${stats.firstPlayer} Last Player:${stats.winner} Game State: ${GameStatesEnum[harness.game.state]}`);
+            let p1Turns = JSON.parse(JSON.stringify(stats.turns));
+            let p2Turns = JSON.parse(JSON.stringify(stats.turns));
+            let totalTurns=sumArr(stats.turns);
+            let totalP1Turns=sumArr(p1Turns,0);
+            let totalP2Turns=sumArr(p2Turns,1);
+            if(csvOut){
+                Utils.log('stats.csv',`[${gameCount} of ${games}],${stats.gameUuid},${stats.turns.length},${totalTurns.moves},${stats.duration.playerDuration[0]/1000},${stats.duration.playerDuration[1]/1000},${stats.firstPlayer},${stats.winner},${GameStatesEnum[harness.game.state]}`);
+                Utils.log(`${harness.game.uuid}.end.txt`,`${Utils.cardsToString(harness.game.cards)}`);
+            }
+            console.log(`[${gameCount} of ${games}] ${stats.gameUuid}: Turns:${stats.turns.length}`+
+                        ` Moves:(${totalP1Turns.moves}+${totalP2Turns.moves})=${totalTurns.moves}`+
+                        ` Duration:(${stats.duration.playerDuration[0]/1000}, ${stats.duration.playerDuration[1]/1000})=${stats.duration.total/1000}`+
+                        ` First Player:${stats.firstPlayer} Last Player:${stats.winner}`+
+                        ` Game State: ${GameStatesEnum[harness.game.state]}`);
+            
         }catch(e){
             console.log(e);
+            console.error(`${Utils.cardsToString(harness.game.cards)}`);
             if((e as Error).message==="TOO MANY POSSIBLE MOVES"){
-                console.error(`${Utils.cardsToString(harness.game.cards)}`);
                 harness=null;
                 wait = 30000;
             }
@@ -256,5 +277,20 @@ function waitForHeap(){
         setTimeout(()=>{waitForHeap()}, wait);
     }
     
+}
+function sumArr(arr:{playerIdx:number,moves:number,duration:number}[],playerIdx:number=-1):{moves:number,duration:number}{
+    let accumulator:{moves:number,duration:number}={moves:0,duration:0};
+    arr.forEach((t)=>{
+        if(playerIdx!=-1){
+            if(t.playerIdx==playerIdx){
+                accumulator.moves += t.moves;
+                accumulator.duration+=t.duration;
+            }
+        }else{
+            accumulator.moves += t.moves;
+            accumulator.duration+=t.duration;
+        }
+    });
+    return accumulator;
 }
 

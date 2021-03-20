@@ -69,5 +69,8 @@ typings/
 *.js
 *.map
 *.txt
+*.csv
+*.bak
+*.xlsx
 lambda/sm_autoplayer/built
 lambda/sm_gameHarness/built
