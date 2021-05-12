@@ -39,7 +39,7 @@ exports.handler = async (event, context, callback) => {
                         if (err) {
                             console.error('Unable to put Item . Error JSON:', JSON.stringify(err, null, 2));
                         } else {
-                            console.log(`SUCESS Added opponent: ${JSON.stringify(item1.Item)}`);
+                            console.log(`SUCCESS Added opponent: ${JSON.stringify(item1.Item)}`);
                         }
                     });
                     const item2 = {
@@ -56,7 +56,7 @@ exports.handler = async (event, context, callback) => {
                         if (err) {
                             console.error('Unable to put Item . Error JSON:', JSON.stringify(err, null, 2));
                         } else {
-                            console.log(`SUCESS Added opponent: ${JSON.stringify(item2.Item)}`);
+                            console.log(`SUCCESS Added opponent: ${JSON.stringify(item2.Item)}`);
                         }
                     });
                 });
