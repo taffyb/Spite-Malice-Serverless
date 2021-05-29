@@ -1,0 +1,38 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Game",
+    "type": "object",
+    "properties": {
+        "uuid":{
+            "type":"string"
+        },
+        "name":{
+            "type":"string"
+        },
+        "playerUuid1":{
+            "type":"string"
+        },
+        "playerUuid2":{
+            "type":"string"
+        },
+        "activePlayer":{
+            "type":"number"
+        },
+        "state":{
+            "type":"number"
+        },
+        "createDateTime":{
+            "type":"string"
+        },
+        "cards":{
+            "type":"array",
+            "items": { 
+                "type":"array",
+                "items": {"type":"number"}
+             },
+            "maxItems":26,
+            "minItems":26
+        }
+    },
+    "required": ["name", "player1Uuid", "player2Uuid", "activePlayer", "state"]
+}

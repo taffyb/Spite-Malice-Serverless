@@ -1,0 +1,41 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+      "title": "Moves",
+      "type": "array",      
+      "items": { 
+        "type":"object",
+        "properties": {
+            "id": {
+                "type": "number"
+            },
+            "gameUuid": {
+                "type": "string"
+            },
+            "playerUuid": {
+              "type": "string"
+            },
+            "from": {
+              "type": "number"
+            },
+            "card": {
+              "type": "number"
+            },
+            "to": {
+              "type": "number"
+            },
+            "isDiscard": {
+              "type": "boolean",
+              "default": "false"
+              
+            },
+            "isUndo": {
+              "type": "boolean",
+              "default": "false"
+            },
+            "type": {
+              "type": "number"
+            }
+        },
+        "required": ["id", "gameUuid", "playerUuid", "from", "card", "to","type"]
+    }      
+  }

@@ -1,0 +1,11 @@
+import {handler} from './JWTVerifyer';
+
+const JWT = {token:"eyJraWQiOiIzZVJudmZvb0tDVU9ETllDQTQ1YjMwRm82WVYwNDg0WFhHS2tySEFmZVRFPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiIxMDhkYzI5My1mNjM4LTRiMTAtYjUwYi1kMWJhYTcwYzQyNzEiLCJhdWQiOiIzN282ZGNwc2IwN3ZuNGI5MzcydWZxYmVqYiIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJldmVudF9pZCI6IjFkYzliYzBmLTdiNDctNGFkMC1iMjQ4LTRlOWUxOGM4MjQ1NSIsInRva2VuX3VzZSI6ImlkIiwiYXV0aF90aW1lIjoxNjIwMjg2MTM4LCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAuZXUtd2VzdC0yLmFtYXpvbmF3cy5jb21cL2V1LXdlc3QtMl9LSENORDVKdmMiLCJjb2duaXRvOnVzZXJuYW1lIjoidGFmZnkiLCJleHAiOjE2MjIyMTg0MzIsImlhdCI6MTYyMjIxNDgzMiwiZW1haWwiOiJicmVja25vY2t0QGdtYWlsLmNvbSJ9.JDRB_SpT_4ad9Ik8fAzaZ46LdGveSfGWo5YZ48T2Ue7qCv67VGkr1UoSIYYCQUxOoghlHP6emRD4yCPQJd1Z3R4AJbJQewGBWQcYzxiwjhVnM29_eRD_ScIYER1qYqLouJ_PhnnuAiELTpoq7EFQopkgJ5YtJN7tw0IdCmCi2CVrRySDY2VsxNwk1qRU_CozRj5JWdugKPRLeYnyAfrIZcw26942cOfUWZYJpQuIX9O8LQJ9rZ5SAKy-9yRW7tt_JPbeN-9CmG_JtF39bfNWW0bK7bKR-dz_Fhyr5ylaGcFgWWLert2ahkhSwJnbtmw4T2h3PoinZz0OwSij3OxHIg"}
+
+const verified = handler(JWT);
+verified
+    .then(result=>{console.log(`${JSON.stringify(result,null, 2)}`);})
+    .catch(err=>{console.log(err)});
+
+    console.log(`Done`);
+    
