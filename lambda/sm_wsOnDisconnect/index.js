@@ -10,7 +10,7 @@ exports.handler = async  (event) => {
     Key:{
         'uuid': playerUuid
     },
-    UpdateExpression:`REMOVE wsConnected, wsConnectionId`,
+    UpdateExpression:`REMOVE wsConnected, wsConnectionId SET status=""`,
     ReturnValues:"UPDATED_NEW"
   };
 
