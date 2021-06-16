@@ -9,8 +9,8 @@ exports.handler = async (event, context, callback) => {
         IndexName: "player1Games",
         KeyConditionExpression: "player1Uuid = :p1",
         ExpressionAttributeValues: {":p1":event.sub},
-        ExpressionAttributeNames: {"#u":"uuid", "#s":"status", "#p2":"player2Uuid"},
-        ProjectionExpression: "#u, #s, #p2",
+        ExpressionAttributeNames: {"#u":"uuid", "#s":"state", "#p2":"player2Uuid", "#n":"name","#c":"createDateTime"},
+        ProjectionExpression: "#u, #s, #p2, #n, #c",
         ScanIndexForward: false
     };
     console.log(`${JSON.stringify(item)}`);
@@ -22,8 +22,8 @@ exports.handler = async (event, context, callback) => {
         IndexName: "player2Games",
         KeyConditionExpression: "player2Uuid = :p2",
         ExpressionAttributeValues: {":p2":event.sub},
-        ExpressionAttributeNames: {"#u":"uuid", "#s":"status", "#p1":"player1Uuid"},
-        ProjectionExpression: "#u, #s, #p1",
+        ExpressionAttributeNames: {"#u":"uuid", "#s":"state", "#p1":"player1Uuid", "#n":"name","#c":"createDateTime"},
+        ProjectionExpression: "#u, #s, #p1, #n, #c",
         ScanIndexForward: false
     };
     console.log(`${JSON.stringify(item)}`);
